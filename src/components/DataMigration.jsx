@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { migrateFromLocalStorage, clearLocalStorage } from '../services/dataService'
 import './DataMigration.css'
 
 export default function DataMigration({ onComplete }) {
+  const navigate = useNavigate()
   const [migrating, setMigrating] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
@@ -58,12 +60,15 @@ export default function DataMigration({ onComplete }) {
   if (packagesCount === 0 && locationsCount === 0) {
     return (
       <div className="migration-container">
+        <button className="back-button" onClick={() => navigate('/')}>
+          ← 返回首页
+        </button>
         <div className="migration-box">
           <div className="migration-icon">✅</div>
           <h2>无需迁移</h2>
           <p>本地没有发现需要迁移的数据</p>
-          <button onClick={handleSkip} className="btn-primary">
-            继续
+          <button onClick={() => navigate('/')} className="btn-primary">
+            返回首页
           </button>
         </div>
       </div>
@@ -72,6 +77,9 @@ export default function DataMigration({ onComplete }) {
 
   return (
     <div className="migration-container">
+      <button className="back-button" onClick={() => navigate('/')}>
+        ← 返回首页
+      </button>
       <div className="migration-box">
         <div className="migration-icon">📦</div>
         <h2>数据迁移</h2>

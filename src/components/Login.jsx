@@ -21,7 +21,11 @@ export default function Login({ onLogin }) {
       })
 
       if (error) throw error
-      onLogin(data.user)
+      
+      // 登录成功，传递 session 而不是 user
+      if (data.session) {
+        onLogin(data.session)
+      }
     } catch (error) {
       setError(error.message)
     } finally {

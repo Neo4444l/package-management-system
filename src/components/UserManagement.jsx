@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import './UserManagement.css'
 
 export default function UserManagement() {
+  const navigate = useNavigate()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [currentUserRole, setCurrentUserRole] = useState(null)
+  const [roleLoading, setRoleLoading] = useState(true) // 添加角色加载状态
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -16,6 +19,7 @@ export default function UserManagement() {
 
   const getCurrentUserRole = async () => {
     try {
+      setRoleLoading(true) // 开始加载
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         const { data } = await supabase
@@ -28,6 +32,8 @@ export default function UserManagement() {
       }
     } catch (error) {
       console.error('获取用户角色失败:', error)
+    } finally {
+      setRoleLoading(false) // 加载完成
     }
   }
 
@@ -108,6 +114,15 @@ export default function UserManagement() {
     }
   }
 
+  // 角色加载中，显示加载状态
+  if (roleLoading) {
+    return (
+      <div className="user-management">
+        <div className="loading">正在验证权限...</div>
+      </div>
+    )
+  }
+
   // 只有管理员可以访问此页面
   if (currentUserRole !== 'admin') {
     return (
@@ -115,6 +130,9 @@ export default function UserManagement() {
         <div className="access-denied">
           <h2>⛔ 访问被拒绝</h2>
           <p>只有管理员可以访问用户管理页面</p>
+          <button onClick={() => navigate('/')} className="btn-back">
+            返回首页
+          </button>
         </div>
       </div>
     )
@@ -130,6 +148,10 @@ export default function UserManagement() {
 
   return (
     <div className="user-management">
+      <button className="back-button" onClick={() => navigate('/')}>
+        ← 返回首页
+      </button>
+      
       <div className="management-header">
         <h1>👥 用户管理</h1>
         <p className="subtitle">管理系统用户和权限</p>
