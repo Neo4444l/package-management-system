@@ -7,10 +7,16 @@ export default function UserManagement() {
   const navigate = useNavigate()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [currentUserId, setCurrentUserId] = useState(null)
   const [currentUserRole, setCurrentUserRole] = useState(null)
-  const [roleLoading, setRoleLoading] = useState(true) // 添加角色加载状态
+  const [roleLoading, setRoleLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [pendingRoleChanges, setPendingRoleChanges] = useState({})
+  const [showCreateUser, setShowCreateUser] = useState(false)
+  const [newUserEmail, setNewUserEmail] = useState('')
+  const [newUserPassword, setNewUserPassword] = useState('')
+  const [newUserRole, setNewUserRole] = useState('user')
 
   useEffect(() => {
     fetchUsers()
@@ -19,9 +25,10 @@ export default function UserManagement() {
 
   const getCurrentUserRole = async () => {
     try {
-      setRoleLoading(true) // 开始加载
+      setRoleLoading(true)
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
+        setCurrentUserId(user.id)
         const { data } = await supabase
           .from('profiles')
           .select('role')
@@ -33,7 +40,7 @@ export default function UserManagement() {
     } catch (error) {
       console.error('获取用户角色失败:', error)
     } finally {
-      setRoleLoading(false) // 加载完成
+      setRoleLoading(false)
     }
   }
 
@@ -54,10 +61,37 @@ export default function UserManagement() {
     }
   }
 
-  const updateUserRole = async (userId, newRole) => {
+  // 处理角色选择变化（不立即保存）
+  const handleRoleChange = (userId, newRole) => {
+    setPendingRoleChanges({
+      ...pendingRoleChanges,
+      [userId]: newRole
+    })
+  }
+
+  // 确认角色更改
+  const confirmRoleChange = async (userId) => {
+    const newRole = pendingRoleChanges[userId]
+    if (!newRole) return
+
     try {
       setError('')
       setSuccess('')
+
+      // 检查是否是当前用户降低自己的权限
+      const isSelfDemotion = userId === currentUserId && 
+        (newRole === 'user' || newRole === 'manager') && 
+        currentUserRole === 'admin'
+
+      if (isSelfDemotion) {
+        if (!window.confirm('警告：您正在降低自己的权限！\n\n降级后您将无法访问用户管理页面，并会自动返回首页。\n\n确定要继续吗？')) {
+          // 取消更改
+          const newPending = { ...pendingRoleChanges }
+          delete newPending[userId]
+          setPendingRoleChanges(newPending)
+          return
+        }
+      }
 
       const { error } = await supabase
         .from('profiles')
@@ -66,11 +100,30 @@ export default function UserManagement() {
 
       if (error) throw error
 
+      // 清除待确认状态
+      const newPending = { ...pendingRoleChanges }
+      delete newPending[userId]
+      setPendingRoleChanges(newPending)
+
       setSuccess('角色更新成功！')
-      fetchUsers()
+      await fetchUsers()
+
+      // 如果是自己降级，跳转到首页
+      if (isSelfDemotion) {
+        setTimeout(() => {
+          navigate('/')
+        }, 1500)
+      }
     } catch (error) {
       setError('更新失败：' + error.message)
     }
+  }
+
+  // 取消角色更改
+  const cancelRoleChange = (userId) => {
+    const newPending = { ...pendingRoleChanges }
+    delete newPending[userId]
+    setPendingRoleChanges(newPending)
   }
 
   const toggleUserStatus = async (userId, currentStatus) => {
@@ -89,6 +142,52 @@ export default function UserManagement() {
       fetchUsers()
     } catch (error) {
       setError('更新失败：' + error.message)
+    }
+  }
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+
+    try {
+      if (newUserPassword.length < 6) {
+        throw new Error('密码至少需要6个字符')
+      }
+
+      // 创建新用户
+      const { data, error } = await supabase.auth.signUp({
+        email: newUserEmail,
+        password: newUserPassword,
+        options: {
+          emailRedirectTo: window.location.origin,
+        }
+      })
+
+      if (error) throw error
+
+      // 更新用户角色
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ role: newUserRole })
+          .eq('id', data.user.id)
+
+        if (profileError) throw profileError
+      }
+
+      setSuccess('用户创建成功！')
+      setShowCreateUser(false)
+      setNewUserEmail('')
+      setNewUserPassword('')
+      setNewUserRole('user')
+      
+      // 刷新用户列表
+      setTimeout(() => {
+        fetchUsers()
+      }, 1000)
+    } catch (error) {
+      setError('创建失败：' + error.message)
     }
   }
 
@@ -148,13 +247,25 @@ export default function UserManagement() {
 
   return (
     <div className="user-management">
-      <button className="back-button" onClick={() => navigate('/')}>
-        ← 返回首页
-      </button>
+      <div className="top-bar">
+        <button className="back-button-top" onClick={() => navigate('/')}>
+          ← 返回首页
+        </button>
+      </div>
       
       <div className="management-header">
-        <h1>👥 用户管理</h1>
-        <p className="subtitle">管理系统用户和权限</p>
+        <div className="header-content">
+          <div>
+            <h1>👥 用户管理</h1>
+            <p className="subtitle">管理系统用户和权限</p>
+          </div>
+          <button 
+            className="btn-create-user"
+            onClick={() => setShowCreateUser(true)}
+          >
+            ➕ 创建新用户
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -227,15 +338,32 @@ export default function UserManagement() {
                 <td>
                   <div className="action-buttons">
                     <select
-                      value={user.role}
-                      onChange={(e) => updateUserRole(user.id, e.target.value)}
+                      value={pendingRoleChanges[user.id] || user.role}
+                      onChange={(e) => handleRoleChange(user.id, e.target.value)}
                       className="role-select"
-                      disabled={user.id === (supabase.auth.getUser().then(u => u.data?.user?.id))}
                     >
                       <option value="user">普通用户</option>
                       <option value="manager">经理</option>
                       <option value="admin">管理员</option>
                     </select>
+                    {pendingRoleChanges[user.id] && pendingRoleChanges[user.id] !== user.role && (
+                      <div className="confirm-buttons">
+                        <button
+                          onClick={() => confirmRoleChange(user.id)}
+                          className="btn-confirm"
+                          title="确认更改"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          onClick={() => cancelRoleChange(user.id)}
+                          className="btn-cancel"
+                          title="取消更改"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
                     <button
                       onClick={() => toggleUserStatus(user.id, user.is_active)}
                       className={`btn-toggle ${user.is_active ? 'btn-deactivate' : 'btn-activate'}`}
@@ -253,6 +381,67 @@ export default function UserManagement() {
       {users.length === 0 && (
         <div className="empty-state">
           <p>暂无用户数据</p>
+        </div>
+      )}
+
+      {/* 创建用户弹窗 */}
+      {showCreateUser && (
+        <div className="modal-overlay" onClick={() => setShowCreateUser(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>创建新用户</h2>
+            <form onSubmit={handleCreateUser}>
+              <div className="form-group">
+                <label>邮箱</label>
+                <input
+                  type="email"
+                  value={newUserEmail}
+                  onChange={(e) => setNewUserEmail(e.target.value)}
+                  placeholder="请输入用户邮箱"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>初始密码</label>
+                <input
+                  type="password"
+                  value={newUserPassword}
+                  onChange={(e) => setNewUserPassword(e.target.value)}
+                  placeholder="请输入初始密码（至少6位）"
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div className="form-group">
+                <label>角色</label>
+                <select
+                  value={newUserRole}
+                  onChange={(e) => setNewUserRole(e.target.value)}
+                  className="role-select-modal"
+                >
+                  <option value="user">普通用户</option>
+                  <option value="manager">经理</option>
+                  <option value="admin">管理员</option>
+                </select>
+              </div>
+              <div className="modal-buttons">
+                <button type="submit" className="btn-submit">
+                  创建
+                </button>
+                <button 
+                  type="button" 
+                  className="btn-cancel-modal"
+                  onClick={() => {
+                    setShowCreateUser(false)
+                    setNewUserEmail('')
+                    setNewUserPassword('')
+                    setNewUserRole('user')
+                  }}
+                >
+                  取消
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

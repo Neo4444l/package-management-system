@@ -65,6 +65,16 @@
   text-align: center;
 }
 
+.success-message {
+  background: #efe;
+  color: #3c3;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  text-align: center;
+  font-weight: 500;
+}
+
 .btn-primary {
   width: 100%;
   padding: 14px;
@@ -108,5 +118,16 @@
 
 .toggle-mode button:hover {
   color: #764ba2;
+}
+
+.admin-note {
+  margin-top: 15px;
+  padding: 12px;
+  background: #f0f4ff;
+  border-left: 4px solid #667eea;
+  border-radius: 8px;
+  color: #555;
+  font-size: 14px;
+  text-align: left;
 }
 
