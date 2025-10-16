@@ -1,47 +1,75 @@
 .user-management {
-  padding: 60px 20px 20px;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.top-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  padding: 15px 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  z-index: 100;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40px 20px;
+  position: relative;
 }
 
 .back-button-top {
+  position: absolute;
+  top: 20px;
+  left: 20px;
   padding: 10px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: rgba(255, 255, 255, 0.2);
   color: white;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
   transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 }
 
 .back-button-top:hover {
+  background: rgba(255, 255, 255, 0.3);
   transform: translateX(-3px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.management-content {
+  background: white;
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 1200px;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .management-header {
   margin-bottom: 30px;
+  text-align: center;
 }
 
 .header-content {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   flex-wrap: wrap;
   gap: 20px;
+  margin-top: 20px;
+}
+
+.management-icon {
+  text-align: center;
+  font-size: 3em;
+  margin-bottom: 15px;
 }
 
 .btn-create-user {
@@ -75,10 +103,12 @@
 
 .access-denied {
   text-align: center;
-  padding: 60px 20px;
+  padding: 60px 40px;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  animation: slideUp 0.3s ease-out;
 }
 
 .access-denied h2 {
@@ -106,9 +136,14 @@
 
 .loading {
   text-align: center;
-  padding: 40px;
+  padding: 60px 40px;
   font-size: 1.2em;
-  color: #667eea;
+  color: #333;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  animation: slideUp 0.3s ease-out;
 }
 
 .message {
@@ -142,49 +177,44 @@
 }
 
 .stats-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 30px;
   margin-bottom: 30px;
+  padding: 25px;
+  background: #f8f9ff;
+  border-radius: 12px;
+  flex-wrap: wrap;
 }
 
 .stat-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 25px;
-  border-radius: 12px;
-  color: white;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-  border: 2px solid rgba(255, 255, 255, 0.2);
   text-align: center;
-  transition: transform 0.3s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  min-width: 120px;
 }
 
 .stat-number {
   font-size: 2.5em;
   font-weight: bold;
-  margin-bottom: 8px;
+  color: #667eea;
+  margin-bottom: 5px;
 }
 
 .stat-label {
   font-size: 1em;
-  opacity: 0.9;
+  color: #666;
 }
 
 .users-table-container {
-  background: white;
+  background: transparent;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  border: 1px solid #e0e0e0;
 }
 
 .users-table {
   width: 100%;
   border-collapse: collapse;
+  background: white;
 }
 
 .users-table thead {
@@ -475,17 +505,12 @@
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .user-management {
-    padding: 10px;
+  .management-content {
+    padding: 30px 20px;
   }
 
   .stats-cards {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-  }
-
-  .stat-card {
-    padding: 15px;
+    gap: 20px;
   }
 
   .stat-number {
@@ -494,6 +519,8 @@
 
   .users-table-container {
     overflow-x: auto;
+    margin: 0 -20px;
+    padding: 0 20px;
   }
 
   .users-table {
@@ -508,6 +535,11 @@
   .role-select,
   .btn-toggle {
     width: 100%;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    text-align: center;
   }
 }
 

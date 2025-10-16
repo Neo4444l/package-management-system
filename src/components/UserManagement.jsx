@@ -247,26 +247,25 @@ export default function UserManagement() {
 
   return (
     <div className="user-management">
-      <div className="top-bar">
-        <button className="back-button-top" onClick={() => navigate('/')}>
-          ← 返回首页
-        </button>
-      </div>
+      <button className="back-button-top" onClick={() => navigate('/')}>
+        ← 返回首页
+      </button>
       
-      <div className="management-header">
-        <div className="header-content">
-          <div>
-            <h1>👥 用户管理</h1>
-            <p className="subtitle">管理系统用户和权限</p>
+      <div className="management-content">
+        <div className="management-header">
+          <div className="management-icon">👥</div>
+          <h1>用户管理</h1>
+          <p className="subtitle">管理系统用户和权限</p>
+          
+          <div className="header-content">
+            <button 
+              className="btn-create-user"
+              onClick={() => setShowCreateUser(true)}
+            >
+              ➕ 创建新用户
+            </button>
           </div>
-          <button 
-            className="btn-create-user"
-            onClick={() => setShowCreateUser(true)}
-          >
-            ➕ 创建新用户
-          </button>
         </div>
-      </div>
 
       {error && (
         <div className="message error-message">
@@ -378,11 +377,12 @@ export default function UserManagement() {
         </table>
       </div>
 
-      {users.length === 0 && (
-        <div className="empty-state">
-          <p>暂无用户数据</p>
-        </div>
-      )}
+        {users.length === 0 && (
+          <div className="empty-state">
+            <p>暂无用户数据</p>
+          </div>
+        )}
+      </div>
 
       {/* 创建用户弹窗 */}
       {showCreateUser && (
