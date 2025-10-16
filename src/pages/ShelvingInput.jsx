@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { supabase } from '../supabaseClient'
 import { addPackage, getPackagesByLocation, deletePackage } from '../services/dataService'
 import './ShelvingInput.css'
 
@@ -9,11 +10,66 @@ function ShelvingInput() {
   const [packageNumber, setPackageNumber] = useState('')
   const [packages, setPackages] = useState([])
   const [notification, setNotification] = useState(null)
+  const [isOnline, setIsOnline] = useState(true)
   const inputRef = useRef(null)
 
   // 从 Supabase 加载已保存的包裹数据
   useEffect(() => {
     loadPackages()
+  }, [locationId])
+
+  // 🔄 实时数据同步
+  useEffect(() => {
+    // 创建实时订阅
+    const subscription = supabase
+      .channel(`packages-location-${locationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'packages',
+          filter: `location=eq.${locationId}`
+        },
+        (payload) => {
+          console.log('📦 包裹数据变化：', payload)
+          
+          if (payload.eventType === 'INSERT') {
+            // 其他用户上架了包裹
+            setPackages(prev => {
+              // 避免重复添加（自己上架的已经添加了）
+              if (prev.some(p => p.id === payload.new.id)) {
+                return prev
+              }
+              return [payload.new, ...prev]
+            })
+            showNotification(`📦 新包裹上架：${payload.new.package_number}`, 'info')
+          } else if (payload.eventType === 'DELETE') {
+            // 其他用户删除了包裹
+            setPackages(prev => prev.filter(p => p.id !== payload.old.id))
+            showNotification(`🗑️ 包裹已被删除`, 'info')
+          } else if (payload.eventType === 'UPDATE') {
+            // 包裹信息被更新
+            setPackages(prev => prev.map(p => 
+              p.id === payload.new.id ? payload.new : p
+            ))
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('🔗 订阅状态：', status)
+        if (status === 'SUBSCRIBED') {
+          setIsOnline(true)
+        } else if (status === 'CLOSED') {
+          setIsOnline(false)
+        }
+      })
+
+    // 清理订阅
+    return () => {
+      console.log('🔌 取消订阅')
+      subscription.unsubscribe()
+    }
   }, [locationId])
 
   const loadPackages = async () => {
@@ -116,6 +172,13 @@ function ShelvingInput() {
 
   return (
     <div className="shelving-input-page">
+      {/* 离线指示器 */}
+      {!isOnline && (
+        <div className="offline-indicator">
+          ⚠️ 连接已断开，正在重连...
+        </div>
+      )}
+
       {notification && (
         <div className={`notification ${notification.type}`}>
           {notification.message}

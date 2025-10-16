@@ -1,24 +1,63 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../supabaseClient'
+import { getAllLocations } from '../services/dataService'
 import './ShelvingPage.css'
 
 function ShelvingPage() {
   const navigate = useNavigate()
   const [selectedLocation, setSelectedLocation] = useState('')
-  const [locationOptions, setLocationOptions] = useState([])
+  const [locations, setLocations] = useState([])
+  const [isOnline, setIsOnline] = useState(true)
 
-  // 从库位管理加载库位选项
-  React.useEffect(() => {
-    const savedLocations = localStorage.getItem('locations')
-    if (savedLocations) {
-      try {
-        const locations = JSON.parse(savedLocations)
-        setLocationOptions(locations.map(loc => loc.code))
-      } catch (error) {
-        console.error('Error loading locations:', error)
-      }
-    }
+  // 从 Supabase 加载库位选项
+  useEffect(() => {
+    loadLocations()
   }, [])
+
+  const loadLocations = async () => {
+    try {
+      const allLocations = await getAllLocations()
+      setLocations(allLocations)
+    } catch (error) {
+      console.error('Error loading locations:', error)
+    }
+  }
+
+  // 🔄 实时监听库位变化
+  useEffect(() => {
+    const subscription = supabase
+      .channel('locations-shelving-page')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'locations'
+        },
+        (payload) => {
+          console.log('📍 库位数据变化：', payload)
+          
+          if (payload.eventType === 'INSERT') {
+            // 新增库位
+            setLocations(prev => [...prev, payload.new])
+          } else if (payload.eventType === 'DELETE') {
+            // 删除库位
+            setLocations(prev => prev.filter(l => l.id !== payload.old.id))
+            // 如果当前选中的库位被删除，清除选择
+            if (selectedLocation === payload.old.code) {
+              setSelectedLocation('')
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('🔗 库位订阅状态：', status)
+        setIsOnline(status === 'SUBSCRIBED')
+      })
+
+    return () => subscription.unsubscribe()
+  }, [selectedLocation])
 
   const handleLocationSelect = (location) => {
     setSelectedLocation(location)
@@ -45,8 +84,15 @@ function ShelvingPage() {
           <p>请选择库位号</p>
         </div>
 
+        {/* 离线指示器 */}
+        {!isOnline && (
+          <div className="offline-indicator">
+            ⚠️ 连接已断开，正在重连...
+          </div>
+        )}
+
         <div className="location-selection">
-          {locationOptions.length === 0 ? (
+          {locations.length === 0 ? (
             <div className="no-locations-warning">
               <div className="warning-icon">⚠️</div>
               <h3>暂无可用库位</h3>
@@ -61,17 +107,17 @@ function ShelvingPage() {
           ) : (
             <>
               <div className="location-header-info">
-                <p>共有 {locationOptions.length} 个可用库位</p>
+                <p>共有 {locations.length} 个可用库位</p>
               </div>
 
               <div className="location-grid">
-                {locationOptions.map((location) => (
+                {locations.map((location) => (
                   <button
-                    key={location}
-                    className={`location-button ${selectedLocation === location ? 'selected' : ''}`}
-                    onClick={() => handleLocationSelect(location)}
+                    key={location.id}
+                    className={`location-button ${selectedLocation === location.code ? 'selected' : ''}`}
+                    onClick={() => handleLocationSelect(location.code)}
                   >
-                    {location}
+                    {location.code}
                   </button>
                 ))}
               </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import QRCode from 'qrcode'
+import { supabase } from '../supabaseClient'
 import { addLocation, getAllLocations, deleteLocation } from '../services/dataService'
 import './LocationManagement.css'
 
@@ -10,11 +11,52 @@ function LocationManagement() {
   const [locations, setLocations] = useState([])
   const [notification, setNotification] = useState(null)
   const [selectedLocations, setSelectedLocations] = useState([])
+  const [isOnline, setIsOnline] = useState(true)
   const canvasRef = useRef(null)
 
   // 从 Supabase 加载库位数据
   useEffect(() => {
     loadLocations()
+  }, [])
+
+  // 🔄 实时监听库位变化
+  useEffect(() => {
+    const subscription = supabase
+      .channel('locations-management')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'locations'
+        },
+        (payload) => {
+          console.log('📍 库位管理数据变化：', payload)
+          
+          if (payload.eventType === 'INSERT') {
+            // 其他用户添加了库位
+            setLocations(prev => {
+              // 避免重复（自己添加的已经在列表中）
+              if (prev.some(l => l.id === payload.new.id)) {
+                return prev
+              }
+              return [...prev, payload.new]
+            })
+            showNotification(`📍 新库位已添加：${payload.new.code}`, 'info')
+          } else if (payload.eventType === 'DELETE') {
+            // 其他用户删除了库位
+            setLocations(prev => prev.filter(l => l.id !== payload.old.id))
+            setSelectedLocations(prev => prev.filter(id => id !== payload.old.id))
+            showNotification(`🗑️ 库位已被删除：${payload.old.code}`, 'info')
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('🔗 库位管理订阅状态：', status)
+        setIsOnline(status === 'SUBSCRIBED')
+      })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   const loadLocations = async () => {
@@ -29,7 +71,7 @@ function LocationManagement() {
 
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type })
-    setTimeout(() => setNotification(null), 3000)
+    setTimeout(() => setNotification(null), type === 'info' ? 2000 : 3000)
   }
 
   const handleAddLocation = async (e) => {
@@ -223,6 +265,13 @@ function LocationManagement() {
 
   return (
     <div className="location-management-page">
+      {/* 离线指示器 */}
+      {!isOnline && (
+        <div className="offline-indicator">
+          ⚠️ 连接已断开，正在重连...
+        </div>
+      )}
+
       {notification && (
         <div className={`notification ${notification.type}`}>
           {notification.message}
