@@ -1,5 +1,31 @@
 import { supabase } from '../supabaseClient'
 
+// ==================== 错误处理辅助函数 ====================
+
+/**
+ * 处理 Supabase 错误，返回友好的错误信息
+ */
+function handleSupabaseError(error, operation) {
+  console.error(`${operation}失败:`, error)
+  
+  // 权限错误
+  if (error.code === '42501' || error.message?.includes('permission') || error.message?.includes('policy')) {
+    throw new Error('权限不足：只有管理员可以执行此操作')
+  }
+  
+  // 其他常见错误
+  if (error.code === '23505') {
+    throw new Error('数据已存在')
+  }
+  
+  if (error.code === '23503') {
+    throw new Error('数据引用错误')
+  }
+  
+  // 默认错误
+  throw new Error(error.message || '操作失败，请稍后重试')
+}
+
 // ==================== 包裹相关操作 ====================
 
 /**
@@ -106,7 +132,7 @@ export async function updatePackage(id, updates) {
 }
 
 /**
- * 删除包裹
+ * 删除包裹（仅管理员）
  */
 export async function deletePackage(id) {
   try {
@@ -115,10 +141,12 @@ export async function deletePackage(id) {
       .delete()
       .eq('id', id)
     
-    if (error) throw error
+    if (error) {
+      handleSupabaseError(error, '删除包裹')
+    }
     return true
   } catch (error) {
-    console.error('删除包裹失败:', error)
+    // 重新抛出，让调用者处理
     throw error
   }
 }
@@ -231,7 +259,7 @@ export async function addLocation(code) {
 }
 
 /**
- * 删除库位
+ * 删除库位（仅管理员）
  */
 export async function deleteLocation(id) {
   try {
@@ -240,16 +268,18 @@ export async function deleteLocation(id) {
       .delete()
       .eq('id', id)
     
-    if (error) throw error
+    if (error) {
+      handleSupabaseError(error, '删除库位')
+    }
     return true
   } catch (error) {
-    console.error('删除库位失败:', error)
+    // 重新抛出，让调用者处理
     throw error
   }
 }
 
 /**
- * 批量删除库位
+ * 批量删除库位（仅管理员）
  */
 export async function batchDeleteLocations(locationIds) {
   try {
@@ -258,10 +288,12 @@ export async function batchDeleteLocations(locationIds) {
       .delete()
       .in('id', locationIds)
     
-    if (error) throw error
+    if (error) {
+      handleSupabaseError(error, '批量删除库位')
+    }
     return true
   } catch (error) {
-    console.error('批量删除库位失败:', error)
+    // 重新抛出，让调用者处理
     throw error
   }
 }
