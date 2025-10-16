@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import QRCode from 'qrcode'
+import { addLocation, getAllLocations, deleteLocation } from '../services/dataService'
 import './LocationManagement.css'
 
 function LocationManagement() {
@@ -11,24 +12,27 @@ function LocationManagement() {
   const [selectedLocations, setSelectedLocations] = useState([])
   const canvasRef = useRef(null)
 
-  // 从 localStorage 加载库位数据
+  // 从 Supabase 加载库位数据
   useEffect(() => {
-    const savedLocations = localStorage.getItem('locations')
-    if (savedLocations) {
-      try {
-        setLocations(JSON.parse(savedLocations))
-      } catch (error) {
-        console.error('Error loading locations:', error)
-      }
-    }
+    loadLocations()
   }, [])
+
+  const loadLocations = async () => {
+    try {
+      const allLocations = await getAllLocations()
+      setLocations(allLocations)
+    } catch (error) {
+      console.error('Error loading locations:', error)
+      showNotification('加载库位数据失败', 'error')
+    }
+  }
 
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type })
     setTimeout(() => setNotification(null), 3000)
   }
 
-  const handleAddLocation = (e) => {
+  const handleAddLocation = async (e) => {
     e.preventDefault()
     
     if (!locationInput.trim()) {
@@ -42,28 +46,35 @@ function LocationManagement() {
       return
     }
 
-    const newLocation = {
-      id: Date.now(),
-      code: locationInput.trim(),
-      createdAt: new Date().toISOString(),
-      createdAtDisplay: new Date().toLocaleString('zh-CN')
-    }
+    try {
+      // 保存到 Supabase
+      const newLocation = await addLocation(locationInput.trim())
 
-    const updatedLocations = [...locations, newLocation]
-    setLocations(updatedLocations)
-    localStorage.setItem('locations', JSON.stringify(updatedLocations))
-    
-    setLocationInput('')
-    showNotification(`库位 ${newLocation.code} 已添加`, 'success')
+      const updatedLocations = [...locations, newLocation]
+      setLocations(updatedLocations)
+      
+      setLocationInput('')
+      showNotification(`库位 ${newLocation.code} 已添加到云端`, 'success')
+    } catch (error) {
+      console.error('Error adding location:', error)
+      showNotification('添加失败：' + error.message, 'error')
+    }
   }
 
-  const handleDeleteLocation = (id) => {
+  const handleDeleteLocation = async (id) => {
     if (window.confirm('确定要删除这个库位吗？删除后将无法恢复。')) {
-      const updatedLocations = locations.filter(loc => loc.id !== id)
-      setLocations(updatedLocations)
-      localStorage.setItem('locations', JSON.stringify(updatedLocations))
-      setSelectedLocations(selectedLocations.filter(sid => sid !== id))
-      showNotification('库位已删除', 'success')
+      try {
+        // 从 Supabase 删除
+        await deleteLocation(id)
+        
+        const updatedLocations = locations.filter(loc => loc.id !== id)
+        setLocations(updatedLocations)
+        setSelectedLocations(selectedLocations.filter(sid => sid !== id))
+        showNotification('库位已从云端删除', 'success')
+      } catch (error) {
+        console.error('Error deleting location:', error)
+        showNotification('删除失败：' + error.message, 'error')
+      }
     }
   }
 
@@ -192,7 +203,7 @@ function LocationManagement() {
 
       const dateDiv = printWindow.document.createElement('div')
       dateDiv.className = 'qr-date'
-      dateDiv.textContent = `创建时间: ${location.createdAtDisplay}`
+      dateDiv.textContent = `创建时间: ${location.created_at_display || location.createdAtDisplay}`
 
       qrItem.appendChild(canvas)
       qrItem.appendChild(codeDiv)
@@ -294,7 +305,7 @@ function LocationManagement() {
                   />
                   <div className="location-info">
                     <div className="location-code">{location.code}</div>
-                    <div className="location-date">{location.createdAtDisplay}</div>
+                    <div className="location-date">{location.created_at_display || location.createdAtDisplay}</div>
                   </div>
                   <button
                     className="delete-button"

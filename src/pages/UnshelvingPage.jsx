@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getAllPackages, updatePackage } from '../services/dataService'
 import './UnshelvingPage.css'
 
 function UnshelvingPage() {
@@ -25,30 +26,28 @@ function UnshelvingPage() {
     inputRef.current?.focus()
   }, [])
 
-  const loadPackages = () => {
-    const savedPackages = localStorage.getItem('packages')
-    if (savedPackages) {
-      try {
-        const allPackages = JSON.parse(savedPackages)
-        // 筛选需要下架的包裹：状态为待下架
-        const unshelvingPackages = allPackages.filter(pkg => 
-          pkg.packageStatus === PENDING_REMOVAL_STATUS
-        )
-        setPackages(unshelvingPackages)
-        
-        // 按库位分组
-        const grouped = {}
-        unshelvingPackages.forEach(pkg => {
-          const location = pkg.location || '未知库位'
-          if (!grouped[location]) {
-            grouped[location] = []
-          }
-          grouped[location].push(pkg)
-        })
-        setGroupedPackages(grouped)
-      } catch (error) {
-        console.error('Error loading packages:', error)
-      }
+  const loadPackages = async () => {
+    try {
+      const allPackages = await getAllPackages()
+      // 筛选需要下架的包裹：状态为待下架
+      const unshelvingPackages = allPackages.filter(pkg => 
+        (pkg.package_status || pkg.packageStatus) === PENDING_REMOVAL_STATUS
+      )
+      setPackages(unshelvingPackages)
+      
+      // 按库位分组
+      const grouped = {}
+      unshelvingPackages.forEach(pkg => {
+        const location = pkg.location || '未知库位'
+        if (!grouped[location]) {
+          grouped[location] = []
+        }
+        grouped[location].push(pkg)
+      })
+      setGroupedPackages(grouped)
+    } catch (error) {
+      console.error('Error loading packages:', error)
+      showNotification('加载包裹数据失败', 'error')
     }
   }
 
@@ -82,7 +81,7 @@ function UnshelvingPage() {
     return colorMap[instruction] || '#999'
   }
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault()
     
     if (!searchInput.trim()) {
@@ -91,46 +90,32 @@ function UnshelvingPage() {
     }
 
     // 查找匹配的包裹
-    const matched = packages.find(pkg => 
-      pkg.packageNumber.trim() === searchInput.trim()
-    )
+    const matched = packages.find(pkg => {
+      const packageNum = pkg.package_number || pkg.packageNumber
+      return packageNum.trim() === searchInput.trim()
+    })
 
     if (matched) {
-      // 找到匹配，直接下架
-      const now = new Date()
-      const savedPackages = localStorage.getItem('packages')
-      const allPackages = savedPackages ? JSON.parse(savedPackages) : []
-      const updatedPackages = allPackages.map(pkg => {
-        if (pkg.id === matched.id) {
-          return {
-            ...pkg,
-            packageStatus: 'removed', // 标记为已下架
-            unshelvingTime: now.toISOString(),
-            unshelvingTimeDisplay: now.toLocaleString('zh-CN'),
-            statusHistory: [
-              ...(pkg.statusHistory || []),
-              {
-                action: 'unshelving',
-                packageStatus: 'removed',
-                changedAt: now.toISOString(),
-                changedAtDisplay: now.toLocaleString('zh-CN')
-              }
-            ]
-          }
-        }
-        return pkg
-      })
-      localStorage.setItem('packages', JSON.stringify(updatedPackages))
+      try {
+        // 找到匹配，更新到 Supabase
+        await updatePackage(matched.id, {
+          packageStatus: 'removed'
+        })
 
-      // 显示匹配结果和强提醒（保留直到下次匹配）
-      setMatchedPackage(matched)
-      playSound()
-      showNotification(`✅ 下架成功！运单 ${matched.packageNumber}`, 'success')
-      
-      // 清空输入框，等待下次输入
-      setSearchInput('')
-      loadPackages()
-      inputRef.current?.focus()
+        // 显示匹配结果和强提醒（保留直到下次匹配）
+        setMatchedPackage(matched)
+        playSound()
+        const packageNum = matched.package_number || matched.packageNumber
+        showNotification(`✅ 下架成功！运单 ${packageNum}`, 'success')
+        
+        // 清空输入框，等待下次输入
+        setSearchInput('')
+        await loadPackages()
+        inputRef.current?.focus()
+      } catch (error) {
+        console.error('Error unshelving package:', error)
+        showNotification('下架失败：' + error.message, 'error')
+      }
     } else {
       // 未找到匹配，清空输入
       setSearchInput('')
@@ -211,7 +196,7 @@ function UnshelvingPage() {
             <div className="match-content">
               <div className="match-info-row">
                 <span className="match-label">运单号：</span>
-                <span className="match-value highlight">{matchedPackage.packageNumber}</span>
+                <span className="match-value highlight">{matchedPackage.package_number || matchedPackage.packageNumber}</span>
               </div>
               <div className="match-info-row">
                 <span className="match-label">库位号：</span>
@@ -221,14 +206,14 @@ function UnshelvingPage() {
                 <span className="match-label">客服指令：</span>
                 <span 
                   className="match-status-badge"
-                  style={{ backgroundColor: getInstructionColor(matchedPackage.customerService) }}
+                  style={{ backgroundColor: getInstructionColor(matchedPackage.customer_service || matchedPackage.customerService) }}
                 >
-                  {getInstructionLabel(matchedPackage.customerService)}
+                  {getInstructionLabel(matchedPackage.customer_service || matchedPackage.customerService)}
                 </span>
               </div>
               <div className="match-info-row">
                 <span className="match-label">上架时间：</span>
-                <span className="match-value">{matchedPackage.shelvingTimeDisplay}</span>
+                <span className="match-value">{matchedPackage.shelving_time_display || matchedPackage.shelvingTimeDisplay}</span>
               </div>
             </div>
             <div className="match-success-indicator">
@@ -236,7 +221,7 @@ function UnshelvingPage() {
               <div className="success-text">
                 已成功下架！
                 <span className="instruction-label-inline">
-                  {getInstructionLabel(matchedPackage.customerService)}
+                  {getInstructionLabel(matchedPackage.customer_service || matchedPackage.customerService)}
                 </span>
               </div>
               <div className="auto-close-hint">扫描下一个运单即可更新</div>
@@ -264,12 +249,12 @@ function UnshelvingPage() {
                   <div className="packages-list">
                     {pkgs.map((pkg) => (
                       <div key={pkg.id} className="package-item-compact">
-                        <div className="package-number">{pkg.packageNumber}</div>
+                        <div className="package-number">{pkg.package_number || pkg.packageNumber}</div>
                         <span 
                           className="status-badge-small"
-                          style={{ backgroundColor: getInstructionColor(pkg.customerService) }}
+                          style={{ backgroundColor: getInstructionColor(pkg.customer_service || pkg.customerService) }}
                         >
-                          {getInstructionLabel(pkg.customerService)}
+                          {getInstructionLabel(pkg.customer_service || pkg.customerService)}
                         </span>
                       </div>
                     ))}

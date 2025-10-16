@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getAllPackages, updatePackage, deletePackage } from '../services/dataService'
 import './CenterReturnManagement.css'
 
 function CenterReturnManagement() {
@@ -19,33 +20,19 @@ function CenterReturnManagement() {
     endDate: ''
   })
 
-  // 从 localStorage 加载包裹数据
+  // 从 Supabase 加载包裹数据
   useEffect(() => {
     loadPackages()
   }, [])
 
-  const loadPackages = () => {
-    const savedPackages = localStorage.getItem('packages')
-    if (savedPackages) {
-      try {
-        const allPackages = JSON.parse(savedPackages)
-        // 为每个包裹添加默认状态（如果没有）
-        const packagesWithStatus = allPackages.map(pkg => ({
-          ...pkg,
-          // 新数据结构
-          packageStatus: pkg.packageStatus || pkg.status || 'in-warehouse', // in-warehouse, pending-removal, removed
-          customerService: pkg.customerService || null, // re-dispatch, re-dispatch-new-label, return-to-customer
-          unshelvingTime: pkg.unshelvingTime || null,
-          unshelvingTimeDisplay: pkg.unshelvingTimeDisplay || null,
-          instructionTime: pkg.instructionTime || null,
-          instructionTimeDisplay: pkg.instructionTimeDisplay || null,
-          statusHistory: pkg.statusHistory || []
-        }))
-        setPackages(packagesWithStatus)
-        filterPackages(packagesWithStatus, activeTab, searchQuery)
-      } catch (error) {
-        console.error('Error loading packages:', error)
-      }
+  const loadPackages = async () => {
+    try {
+      const allPackages = await getAllPackages()
+      setPackages(allPackages)
+      filterPackages(allPackages, activeTab, searchQuery)
+    } catch (error) {
+      console.error('Error loading packages:', error)
+      showNotification('加载包裹数据失败', 'error')
     }
   }
 
@@ -55,22 +42,22 @@ function CenterReturnManagement() {
     // 按标签页过滤（新的状态维度）
     switch (tab) {
       case 'in-warehouse':
-        filtered = pkgs.filter(pkg => pkg.packageStatus === 'in-warehouse')
+        filtered = pkgs.filter(pkg => (pkg.package_status || pkg.packageStatus) === 'in-warehouse')
         break
       case 'pending-removal':
-        filtered = pkgs.filter(pkg => pkg.packageStatus === 'pending-removal')
+        filtered = pkgs.filter(pkg => (pkg.package_status || pkg.packageStatus) === 'pending-removal')
         break
       case 'removed':
-        filtered = pkgs.filter(pkg => pkg.packageStatus === 'removed')
+        filtered = pkgs.filter(pkg => (pkg.package_status || pkg.packageStatus) === 'removed')
         break
       case 're-dispatch':
-        filtered = pkgs.filter(pkg => pkg.customerService === 're-dispatch')
+        filtered = pkgs.filter(pkg => (pkg.customer_service || pkg.customerService) === 're-dispatch')
         break
       case 're-dispatch-new-label':
-        filtered = pkgs.filter(pkg => pkg.customerService === 're-dispatch-new-label')
+        filtered = pkgs.filter(pkg => (pkg.customer_service || pkg.customerService) === 're-dispatch-new-label')
         break
       case 'return-to-customer':
-        filtered = pkgs.filter(pkg => pkg.customerService === 'return-to-customer')
+        filtered = pkgs.filter(pkg => (pkg.customer_service || pkg.customerService) === 'return-to-customer')
         break
       default:
         filtered = pkgs
@@ -78,10 +65,11 @@ function CenterReturnManagement() {
 
     // 按搜索关键词过滤
     if (query.trim()) {
-      filtered = filtered.filter(pkg => 
-        pkg.packageNumber.toLowerCase().includes(query.toLowerCase()) ||
-        (pkg.location && pkg.location.toLowerCase().includes(query.toLowerCase()))
-      )
+      filtered = filtered.filter(pkg => {
+        const packageNum = pkg.package_number || pkg.packageNumber
+        return packageNum.toLowerCase().includes(query.toLowerCase()) ||
+          (pkg.location && pkg.location.toLowerCase().includes(query.toLowerCase()))
+      })
     }
 
     // 按时间过滤
@@ -93,13 +81,13 @@ function CenterReturnManagement() {
         let targetTime = null
         switch (timeFilter.type) {
           case 'shelving':
-            targetTime = pkg.shelvingTime ? new Date(pkg.shelvingTime).getTime() : null
+            targetTime = (pkg.shelving_time || pkg.shelvingTime) ? new Date(pkg.shelving_time || pkg.shelvingTime).getTime() : null
             break
           case 'unshelving':
-            targetTime = pkg.unshelvingTime ? new Date(pkg.unshelvingTime).getTime() : null
+            targetTime = (pkg.unshelving_time || pkg.unshelvingTime) ? new Date(pkg.unshelving_time || pkg.unshelvingTime).getTime() : null
             break
           case 'instruction':
-            targetTime = pkg.instructionTime ? new Date(pkg.instructionTime).getTime() : null
+            targetTime = (pkg.instruction_time || pkg.instructionTime) ? new Date(pkg.instruction_time || pkg.instructionTime).getTime() : null
             break
           default:
             return true
@@ -143,43 +131,35 @@ function CenterReturnManagement() {
     }
   }
 
-  const handleUpdateInstruction = (instruction, instructionLabel) => {
+  const handleUpdateInstruction = async (instruction, instructionLabel) => {
     if (selectedPackages.length === 0) {
       showNotification('请先选择要操作的运单', 'error')
       return
     }
 
-    const now = new Date()
-    const updatedPackages = packages.map(pkg => {
-      if (selectedPackages.includes(pkg.id)) {
-        return {
-          ...pkg,
+    try {
+      // 批量更新到 Supabase
+      const updatePromises = selectedPackages.map(pkgId => 
+        updatePackage(pkgId, {
           customerService: instruction,
-          packageStatus: 'pending-removal', // 下达指令后自动标记为待下架
-          instructionTime: now.toISOString(),
-          instructionTimeDisplay: now.toLocaleString('zh-CN'),
-          statusHistory: [
-            ...(pkg.statusHistory || []),
-            {
-              action: 'instruction',
-              customerService: instruction,
-              changedAt: now.toISOString(),
-              changedAtDisplay: now.toLocaleString('zh-CN')
-            }
-          ]
-        }
-      }
-      return pkg
-    })
-
-    setPackages(updatedPackages)
-    localStorage.setItem('packages', JSON.stringify(updatedPackages))
-    setSelectedPackages([])
-    setShowActionModal(false)
-    showNotification(`已将 ${selectedPackages.length} 个运单设置为"${instructionLabel}"，状态已更新为"待下架"`, 'success')
+          packageStatus: 'pending-removal'
+        })
+      )
+      
+      await Promise.all(updatePromises)
+      
+      // 重新加载数据
+      await loadPackages()
+      setSelectedPackages([])
+      setShowActionModal(false)
+      showNotification(`已将 ${selectedPackages.length} 个运单设置为"${instructionLabel}"，状态已更新为"待下架"`, 'success')
+    } catch (error) {
+      console.error('Error updating packages:', error)
+      showNotification('更新失败：' + error.message, 'error')
+    }
   }
 
-  const handleBatchDelete = () => {
+  const handleBatchDelete = async () => {
     if (selectedPackages.length === 0) {
       showNotification('请先选择要删除的运单', 'error')
       return
@@ -187,11 +167,19 @@ function CenterReturnManagement() {
 
     // 删除操作需要二次确认
     if (window.confirm(`确定要删除选中的 ${selectedPackages.length} 个运单吗？\n\n此操作不可恢复！`)) {
-      const updatedPackages = packages.filter(pkg => !selectedPackages.includes(pkg.id))
-      setPackages(updatedPackages)
-      localStorage.setItem('packages', JSON.stringify(updatedPackages))
-      showNotification(`已删除 ${selectedPackages.length} 个运单`, 'success')
-      setSelectedPackages([])
+      try {
+        // 批量删除
+        const deletePromises = selectedPackages.map(pkgId => deletePackage(pkgId))
+        await Promise.all(deletePromises)
+        
+        // 重新加载数据
+        await loadPackages()
+        showNotification(`已从云端删除 ${selectedPackages.length} 个运单`, 'success')
+        setSelectedPackages([])
+      } catch (error) {
+        console.error('Error deleting packages:', error)
+        showNotification('删除失败：' + error.message, 'error')
+      }
     }
   }
 
@@ -230,13 +218,13 @@ function CenterReturnManagement() {
 
     // 生成CSV内容
     const rows = selectedData.map(pkg => [
-      pkg.packageNumber || '',
+      pkg.package_number || pkg.packageNumber || '',
       pkg.location || '',
-      statusMap[pkg.packageStatus] || '',
-      instructionMap[pkg.customerService] || '',
-      pkg.shelvingTimeDisplay || '',
-      pkg.unshelvingTimeDisplay || '',
-      pkg.instructionTimeDisplay || ''
+      statusMap[pkg.package_status || pkg.packageStatus] || '',
+      instructionMap[pkg.customer_service || pkg.customerService] || '',
+      pkg.shelving_time_display || pkg.shelvingTimeDisplay || '',
+      pkg.unshelving_time_display || pkg.unshelvingTimeDisplay || '',
+      pkg.instruction_time_display || pkg.instructionTimeDisplay || ''
     ])
 
     // 组合CSV
@@ -259,32 +247,20 @@ function CenterReturnManagement() {
     showNotification(`已导出 ${selectedPackages.length} 个运单数据`, 'success')
   }
 
-  const handleUpdatePackage = (updates) => {
-    const now = new Date()
-    const updatedPackages = packages.map(pkg => {
-      if (pkg.id === currentPackage.id) {
-        return {
-          ...pkg,
-          ...updates,
-          statusHistory: [
-            ...(pkg.statusHistory || []),
-            {
-              action: 'manual_update',
-              ...updates,
-              changedAt: now.toISOString(),
-              changedAtDisplay: now.toLocaleString('zh-CN')
-            }
-          ]
-        }
-      }
-      return pkg
-    })
-
-    setPackages(updatedPackages)
-    localStorage.setItem('packages', JSON.stringify(updatedPackages))
-    setCurrentPackage(null)
-    setShowManageModal(false)
-    showNotification('运单信息已更新', 'success')
+  const handleUpdatePackage = async (updates) => {
+    try {
+      // 更新到 Supabase
+      await updatePackage(currentPackage.id, updates)
+      
+      // 重新加载数据
+      await loadPackages()
+      setCurrentPackage(null)
+      setShowManageModal(false)
+      showNotification('运单信息已更新到云端', 'success')
+    } catch (error) {
+      console.error('Error updating package:', error)
+      showNotification('更新失败：' + error.message, 'error')
+    }
   }
 
   const getStatusBadge = (status) => {
@@ -322,17 +298,17 @@ function CenterReturnManagement() {
       case 'all':
         return packages.length
       case 'in-warehouse':
-        return packages.filter(pkg => pkg.packageStatus === 'in-warehouse').length
+        return packages.filter(pkg => (pkg.package_status || pkg.packageStatus) === 'in-warehouse').length
       case 'pending-removal':
-        return packages.filter(pkg => pkg.packageStatus === 'pending-removal').length
+        return packages.filter(pkg => (pkg.package_status || pkg.packageStatus) === 'pending-removal').length
       case 'removed':
-        return packages.filter(pkg => pkg.packageStatus === 'removed').length
+        return packages.filter(pkg => (pkg.package_status || pkg.packageStatus) === 'removed').length
       case 're-dispatch':
-        return packages.filter(pkg => pkg.customerService === 're-dispatch').length
+        return packages.filter(pkg => (pkg.customer_service || pkg.customerService) === 're-dispatch').length
       case 're-dispatch-new-label':
-        return packages.filter(pkg => pkg.customerService === 're-dispatch-new-label').length
+        return packages.filter(pkg => (pkg.customer_service || pkg.customerService) === 're-dispatch-new-label').length
       case 'return-to-customer':
-        return packages.filter(pkg => pkg.customerService === 'return-to-customer').length
+        return packages.filter(pkg => (pkg.customer_service || pkg.customerService) === 'return-to-customer').length
       default:
         return 0
     }
@@ -532,13 +508,13 @@ function CenterReturnManagement() {
                         onChange={() => handleSelectPackage(pkg.id)}
                       />
                     </td>
-                    <td className="package-number">{pkg.packageNumber}</td>
+                    <td className="package-number">{pkg.package_number || pkg.packageNumber}</td>
                     <td>{pkg.location || '-'}</td>
-                    <td>{getStatusBadge(pkg.packageStatus)}</td>
-                    <td>{getInstructionBadge(pkg.customerService)}</td>
-                    <td className="package-time">{pkg.shelvingTimeDisplay || '-'}</td>
-                    <td className="package-time">{pkg.unshelvingTimeDisplay || '-'}</td>
-                    <td className="package-time">{pkg.instructionTimeDisplay || '-'}</td>
+                    <td>{getStatusBadge(pkg.package_status || pkg.packageStatus)}</td>
+                    <td>{getInstructionBadge(pkg.customer_service || pkg.customerService)}</td>
+                    <td className="package-time">{pkg.shelving_time_display || pkg.shelvingTimeDisplay || '-'}</td>
+                    <td className="package-time">{pkg.unshelving_time_display || pkg.unshelvingTimeDisplay || '-'}</td>
+                    <td className="package-time">{pkg.instruction_time_display || pkg.instructionTimeDisplay || '-'}</td>
                     <td>
                       <button
                         className="quick-action-button"
@@ -602,7 +578,7 @@ function CenterReturnManagement() {
             <div className="manage-content">
               <div className="manage-info-row">
                 <span className="manage-label">运单号：</span>
-                <span className="manage-value">{currentPackage.packageNumber}</span>
+                <span className="manage-value">{currentPackage.package_number || currentPackage.packageNumber}</span>
               </div>
               <div className="manage-info-row">
                 <span className="manage-label">库位：</span>
@@ -614,19 +590,19 @@ function CenterReturnManagement() {
               <h3 className="section-title-small">修改状态</h3>
               <div className="status-buttons">
                 <button
-                  className={`status-edit-button ${currentPackage.packageStatus === 'in-warehouse' ? 'active' : ''}`}
+                  className={`status-edit-button ${(currentPackage.package_status || currentPackage.packageStatus) === 'in-warehouse' ? 'active' : ''}`}
                   onClick={() => handleUpdatePackage({ packageStatus: 'in-warehouse' })}
                 >
                   在库内
                 </button>
                 <button
-                  className={`status-edit-button ${currentPackage.packageStatus === 'pending-removal' ? 'active' : ''}`}
+                  className={`status-edit-button ${(currentPackage.package_status || currentPackage.packageStatus) === 'pending-removal' ? 'active' : ''}`}
                   onClick={() => handleUpdatePackage({ packageStatus: 'pending-removal' })}
                 >
                   待下架
                 </button>
                 <button
-                  className={`status-edit-button ${currentPackage.packageStatus === 'removed' ? 'active' : ''}`}
+                  className={`status-edit-button ${(currentPackage.package_status || currentPackage.packageStatus) === 'removed' ? 'active' : ''}`}
                   onClick={() => handleUpdatePackage({ packageStatus: 'removed' })}
                 >
                   已下架
@@ -636,25 +612,25 @@ function CenterReturnManagement() {
               <h3 className="section-title-small">修改客服指令</h3>
               <div className="instruction-buttons">
                 <button
-                  className={`instruction-edit-button ${currentPackage.customerService === 're-dispatch' ? 'active' : ''}`}
+                  className={`instruction-edit-button ${(currentPackage.customer_service || currentPackage.customerService) === 're-dispatch' ? 'active' : ''}`}
                   onClick={() => handleUpdatePackage({ customerService: 're-dispatch' })}
                 >
                   重派
                 </button>
                 <button
-                  className={`instruction-edit-button ${currentPackage.customerService === 're-dispatch-new-label' ? 'active' : ''}`}
+                  className={`instruction-edit-button ${(currentPackage.customer_service || currentPackage.customerService) === 're-dispatch-new-label' ? 'active' : ''}`}
                   onClick={() => handleUpdatePackage({ customerService: 're-dispatch-new-label' })}
                 >
                   重派（新面单）
                 </button>
                 <button
-                  className={`instruction-edit-button ${currentPackage.customerService === 'return-to-customer' ? 'active' : ''}`}
+                  className={`instruction-edit-button ${(currentPackage.customer_service || currentPackage.customerService) === 'return-to-customer' ? 'active' : ''}`}
                   onClick={() => handleUpdatePackage({ customerService: 'return-to-customer' })}
                 >
                   退回客户
                 </button>
                 <button
-                  className={`instruction-edit-button ${!currentPackage.customerService ? 'active' : ''}`}
+                  className={`instruction-edit-button ${!(currentPackage.customer_service || currentPackage.customerService) ? 'active' : ''}`}
                   onClick={() => handleUpdatePackage({ customerService: null })}
                 >
                   清除指令

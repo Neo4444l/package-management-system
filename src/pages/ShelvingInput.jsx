@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { addPackage, getPackagesByLocation, deletePackage } from '../services/dataService'
 import './ShelvingInput.css'
 
 function ShelvingInput() {
@@ -10,19 +11,20 @@ function ShelvingInput() {
   const [notification, setNotification] = useState(null)
   const inputRef = useRef(null)
 
-  // 从 localStorage 加载已保存的包裹数据
+  // 从 Supabase 加载已保存的包裹数据
   useEffect(() => {
-    const savedPackages = localStorage.getItem('packages')
-    if (savedPackages) {
-      try {
-        const allPackages = JSON.parse(savedPackages)
-        const locationPackages = allPackages.filter(pkg => pkg.location === locationId)
-        setPackages(locationPackages)
-      } catch (error) {
-        console.error('Error loading packages:', error)
-      }
-    }
+    loadPackages()
   }, [locationId])
+
+  const loadPackages = async () => {
+    try {
+      const locationPackages = await getPackagesByLocation(locationId)
+      setPackages(locationPackages)
+    } catch (error) {
+      console.error('Error loading packages:', error)
+      showNotification('加载包裹数据失败', 'error')
+    }
+  }
 
   // 自动聚焦输入框
   useEffect(() => {
@@ -34,7 +36,7 @@ function ShelvingInput() {
     setTimeout(() => setNotification(null), 3000)
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     
     if (!packageNumber.trim()) {
@@ -42,43 +44,41 @@ function ShelvingInput() {
       return
     }
 
-    // 创建新包裹记录
-    const newPackage = {
-      id: Date.now(),
-      packageNumber: packageNumber.trim(),
-      location: locationId,
-      shelvingTime: new Date().toISOString(),
-      shelvingTimeDisplay: new Date().toLocaleString('zh-CN')
-    }
-
-    // 保存到 localStorage
-    const savedPackages = localStorage.getItem('packages')
-    const allPackages = savedPackages ? JSON.parse(savedPackages) : []
-    allPackages.push(newPackage)
-    localStorage.setItem('packages', JSON.stringify(allPackages))
-
-    // 更新当前显示的列表
-    setPackages([newPackage, ...packages])
-    
-    // 清空输入框并显示通知
-    setPackageNumber('')
-    showNotification(`包裹 ${newPackage.packageNumber} 已成功上架`, 'success')
-    
-    // 重新聚焦输入框
-    inputRef.current?.focus()
-  }
-
-  const handleDelete = (id) => {
-    if (window.confirm('确定要删除这条记录吗？')) {
-      // 从所有包裹中删除
-      const savedPackages = localStorage.getItem('packages')
-      const allPackages = savedPackages ? JSON.parse(savedPackages) : []
-      const updatedPackages = allPackages.filter(pkg => pkg.id !== id)
-      localStorage.setItem('packages', JSON.stringify(updatedPackages))
+    try {
+      // 创建新包裹记录并保存到 Supabase
+      const newPackage = await addPackage({
+        packageNumber: packageNumber.trim(),
+        location: locationId
+      })
 
       // 更新当前显示的列表
-      setPackages(packages.filter(pkg => pkg.id !== id))
-      showNotification('记录已删除', 'success')
+      setPackages([newPackage, ...packages])
+      
+      // 清空输入框并显示通知
+      setPackageNumber('')
+      showNotification(`包裹 ${newPackage.package_number} 已成功上架到云端`, 'success')
+      
+      // 重新聚焦输入框
+      inputRef.current?.focus()
+    } catch (error) {
+      console.error('Error adding package:', error)
+      showNotification('上架失败：' + error.message, 'error')
+    }
+  }
+
+  const handleDelete = async (id) => {
+    if (window.confirm('确定要删除这条记录吗？')) {
+      try {
+        // 从 Supabase 删除
+        await deletePackage(id)
+
+        // 更新当前显示的列表
+        setPackages(packages.filter(pkg => pkg.id !== id))
+        showNotification('记录已从云端删除', 'success')
+      } catch (error) {
+        console.error('Error deleting package:', error)
+        showNotification('删除失败：' + error.message, 'error')
+      }
     }
   }
 
@@ -91,9 +91,9 @@ function ShelvingInput() {
     // 导出为 CSV
     const headers = ['包裹号', '库位', '上架时间']
     const rows = packages.map(pkg => [
-      pkg.packageNumber,
+      pkg.package_number || pkg.packageNumber,
       pkg.location,
-      pkg.shelvingTimeDisplay
+      pkg.shelving_time_display || pkg.shelvingTimeDisplay
     ])
 
     const csvContent = [
@@ -177,8 +177,8 @@ function ShelvingInput() {
               {packages.map((pkg) => (
                 <div key={pkg.id} className="package-item">
                   <div className="package-info">
-                    <div className="package-number">{pkg.packageNumber}</div>
-                    <div className="package-time">{pkg.shelvingTimeDisplay}</div>
+                    <div className="package-number">{pkg.package_number || pkg.packageNumber}</div>
+                    <div className="package-time">{pkg.shelving_time_display || pkg.shelvingTimeDisplay}</div>
                   </div>
                   <button 
                     className="delete-button"
