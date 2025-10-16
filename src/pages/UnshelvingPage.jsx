@@ -1,0 +1,288 @@
+import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import './UnshelvingPage.css'
+
+function UnshelvingPage() {
+  const navigate = useNavigate()
+  const [packages, setPackages] = useState([])
+  const [groupedPackages, setGroupedPackages] = useState({})
+  const [searchInput, setSearchInput] = useState('')
+  const [matchedPackage, setMatchedPackage] = useState(null)
+  const [notification, setNotification] = useState(null)
+  const inputRef = useRef(null)
+  const audioRef = useRef(null)
+
+  // 需要下架的状态：待下架
+  const PENDING_REMOVAL_STATUS = 'pending-removal'
+
+  // 加载需要下架的包裹
+  useEffect(() => {
+    loadPackages()
+  }, [])
+
+  // 自动聚焦输入框
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
+
+  const loadPackages = () => {
+    const savedPackages = localStorage.getItem('packages')
+    if (savedPackages) {
+      try {
+        const allPackages = JSON.parse(savedPackages)
+        // 筛选需要下架的包裹：状态为待下架
+        const unshelvingPackages = allPackages.filter(pkg => 
+          pkg.packageStatus === PENDING_REMOVAL_STATUS
+        )
+        setPackages(unshelvingPackages)
+        
+        // 按库位分组
+        const grouped = {}
+        unshelvingPackages.forEach(pkg => {
+          const location = pkg.location || '未知库位'
+          if (!grouped[location]) {
+            grouped[location] = []
+          }
+          grouped[location].push(pkg)
+        })
+        setGroupedPackages(grouped)
+      } catch (error) {
+        console.error('Error loading packages:', error)
+      }
+    }
+  }
+
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type })
+    setTimeout(() => setNotification(null), 5000)
+  }
+
+  const playSound = () => {
+    // 播放提示音
+    if (audioRef.current) {
+      audioRef.current.play().catch(err => console.log('Audio play failed:', err))
+    }
+  }
+
+  const getInstructionLabel = (instruction) => {
+    const instructionMap = {
+      're-dispatch': '重派',
+      're-dispatch-new-label': '重派（新面单）',
+      'return-to-customer': '退回客户'
+    }
+    return instructionMap[instruction] || '无指令'
+  }
+
+  const getInstructionColor = (instruction) => {
+    const colorMap = {
+      're-dispatch': '#9C27B0',
+      're-dispatch-new-label': '#75D025',
+      'return-to-customer': '#F44336'
+    }
+    return colorMap[instruction] || '#999'
+  }
+
+  const handleSearch = (e) => {
+    e.preventDefault()
+    
+    if (!searchInput.trim()) {
+      showNotification('请输入运单号', 'error')
+      return
+    }
+
+    // 查找匹配的包裹
+    const matched = packages.find(pkg => 
+      pkg.packageNumber.trim() === searchInput.trim()
+    )
+
+    if (matched) {
+      // 找到匹配，直接下架
+      const now = new Date()
+      const savedPackages = localStorage.getItem('packages')
+      const allPackages = savedPackages ? JSON.parse(savedPackages) : []
+      const updatedPackages = allPackages.map(pkg => {
+        if (pkg.id === matched.id) {
+          return {
+            ...pkg,
+            packageStatus: 'removed', // 标记为已下架
+            unshelvingTime: now.toISOString(),
+            unshelvingTimeDisplay: now.toLocaleString('zh-CN'),
+            statusHistory: [
+              ...(pkg.statusHistory || []),
+              {
+                action: 'unshelving',
+                packageStatus: 'removed',
+                changedAt: now.toISOString(),
+                changedAtDisplay: now.toLocaleString('zh-CN')
+              }
+            ]
+          }
+        }
+        return pkg
+      })
+      localStorage.setItem('packages', JSON.stringify(updatedPackages))
+
+      // 显示匹配结果和强提醒（保留直到下次匹配）
+      setMatchedPackage(matched)
+      playSound()
+      showNotification(`✅ 下架成功！运单 ${matched.packageNumber}`, 'success')
+      
+      // 清空输入框，等待下次输入
+      setSearchInput('')
+      loadPackages()
+      inputRef.current?.focus()
+    } else {
+      // 未找到匹配，清空输入
+      setSearchInput('')
+      showNotification('未找到匹配的运单号', 'error')
+      inputRef.current?.focus()
+    }
+  }
+
+  const handleClearMatch = () => {
+    setMatchedPackage(null)
+    setSearchInput('')
+    inputRef.current?.focus()
+  }
+
+  return (
+    <div className="unshelving-page">
+      {notification && (
+        <div className={`notification ${notification.type}`}>
+          {notification.message}
+        </div>
+      )}
+
+      {/* 提示音 */}
+      <audio ref={audioRef} src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUKjo77RgGwU7k9n0yHkpBSh+zPLaizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBQ=="></audio>
+
+      <div className="unshelving-container">
+        <button className="back-button" onClick={() => navigate('/')}>
+          ← 返回首页
+        </button>
+
+        <div className="unshelving-header">
+          <div className="header-icon">📤</div>
+          <h1>下架管理</h1>
+          <p>扫描或输入运单号进行下架</p>
+        </div>
+
+        <div className="stats-bar">
+          <div className="stat-item">
+            <div className="stat-value">{packages.length}</div>
+            <div className="stat-label">待下架运单</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-value">{Object.keys(groupedPackages).length}</div>
+            <div className="stat-label">涉及库位</div>
+          </div>
+        </div>
+
+        <form className="search-form" onSubmit={handleSearch}>
+          <div className="search-input-group">
+            <input
+              ref={inputRef}
+              type="text"
+              className="search-input-large"
+              placeholder="请输入或扫描运单号..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              autoComplete="off"
+            />
+            <button type="submit" className="search-button">
+              查找 🔍
+            </button>
+          </div>
+        </form>
+
+        {matchedPackage && (
+          <div 
+            className="match-result-card"
+            style={{ 
+              background: `linear-gradient(135deg, ${getInstructionColor(matchedPackage.customerService)} 0%, ${getInstructionColor(matchedPackage.customerService)}dd 100%)`
+            }}
+          >
+            <div className="match-header">
+              <div className="match-title">✅ 下架成功！</div>
+              <button className="close-match-button" onClick={handleClearMatch}>
+                ✕
+              </button>
+            </div>
+            <div className="match-content">
+              <div className="match-info-row">
+                <span className="match-label">运单号：</span>
+                <span className="match-value highlight">{matchedPackage.packageNumber}</span>
+              </div>
+              <div className="match-info-row">
+                <span className="match-label">库位号：</span>
+                <span className="match-value location">{matchedPackage.location}</span>
+              </div>
+              <div className="match-info-row">
+                <span className="match-label">客服指令：</span>
+                <span 
+                  className="match-status-badge"
+                  style={{ backgroundColor: getInstructionColor(matchedPackage.customerService) }}
+                >
+                  {getInstructionLabel(matchedPackage.customerService)}
+                </span>
+              </div>
+              <div className="match-info-row">
+                <span className="match-label">上架时间：</span>
+                <span className="match-value">{matchedPackage.shelvingTimeDisplay}</span>
+              </div>
+            </div>
+            <div className="match-success-indicator">
+              <div className="success-icon">✅</div>
+              <div className="success-text">
+                已成功下架！
+                <span className="instruction-label-inline">
+                  {getInstructionLabel(matchedPackage.customerService)}
+                </span>
+              </div>
+              <div className="auto-close-hint">扫描下一个运单即可更新</div>
+            </div>
+          </div>
+        )}
+
+        <div className="packages-by-location">
+          <h2 className="section-title">按库位分类 ({Object.keys(groupedPackages).length} 个库位)</h2>
+          
+          {Object.keys(groupedPackages).length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">📭</div>
+              <p>暂无待下架运单</p>
+              <p className="empty-hint">运单在"中心退回管理"中下达指令后，状态会自动变为"待下架"并显示在此处</p>
+            </div>
+          ) : (
+            <div className="location-groups">
+              {Object.entries(groupedPackages).map(([location, pkgs]) => (
+                <div key={location} className="location-group-card">
+                  <div className="location-group-header">
+                    <h3 className="location-name">📍 {location}</h3>
+                    <span className="package-count">{pkgs.length} 个运单</span>
+                  </div>
+                  <div className="packages-list">
+                    {pkgs.map((pkg) => (
+                      <div key={pkg.id} className="package-item-compact">
+                        <div className="package-number">{pkg.packageNumber}</div>
+                        <span 
+                          className="status-badge-small"
+                          style={{ backgroundColor: getInstructionColor(pkg.customerService) }}
+                        >
+                          {getInstructionLabel(pkg.customerService)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default UnshelvingPage
+
