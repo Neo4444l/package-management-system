@@ -180,11 +180,12 @@ function CenterReturnManagement() {
     }
 
     try {
-      // 批量更新到 Supabase
+      // 批量更新到 Supabase（使用正确的字段名：snake_case）
       const updatePromises = selectedPackages.map(pkgId => 
         updatePackage(pkgId, {
-          customerService: instruction,
-          packageStatus: 'pending-removal'
+          customer_service: instruction,        // 修复：使用 snake_case
+          package_status: 'pending-removal',    // 修复：使用 snake_case
+          instruction_time: new Date().toISOString()  // 添加指令时间
         })
       )
       
