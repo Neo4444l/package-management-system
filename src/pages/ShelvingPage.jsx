@@ -10,6 +10,7 @@ function ShelvingPage() {
   const [locations, setLocations] = useState([])
   const [isOnline, setIsOnline] = useState(true)
   const [packageCounts, setPackageCounts] = useState({})  // 每个库位的包裹数量
+  const [loading, setLoading] = useState(true)  // 添加加载状态
 
   // 从 Supabase 加载库位选项
   useEffect(() => {
@@ -19,10 +20,13 @@ function ShelvingPage() {
 
   const loadLocations = async () => {
     try {
+      setLoading(true)
       const allLocations = await getAllLocations()
       setLocations(allLocations)
     } catch (error) {
       console.error('Error loading locations:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -136,7 +140,12 @@ function ShelvingPage() {
         )}
 
         <div className="location-selection">
-          {locations.length === 0 ? (
+          {loading ? (
+            <div className="loading-container">
+              <div className="loading-spinner"></div>
+              <p>加载中...</p>
+            </div>
+          ) : locations.length === 0 ? (
             <div className="no-locations-warning">
               <div className="warning-icon">⚠️</div>
               <h3>暂无可用库位</h3>

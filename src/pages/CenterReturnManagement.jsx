@@ -95,10 +95,24 @@ function CenterReturnManagement() {
 
   const loadPackages = async () => {
     try {
-      const allPackages = await getAllPackages()
-      // 格式化时间字段
-      const packagesWithFormattedTime = allPackages.map(pkg => ({
+      // 直接使用Supabase查询来获取用户名
+      const { data: allPackages, error } = await supabase
+        .from('packages')
+        .select(`
+          *,
+          last_modified_by_profile:last_modified_by (
+            username,
+            email
+          )
+        `)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      // 格式化时间字段和用户名
+      const packagesWithFormattedTime = (allPackages || []).map(pkg => ({
         ...pkg,
+        last_modified_by_username: pkg.last_modified_by_profile?.username || '-',
         shelving_time_display: pkg.shelving_time ? new Date(pkg.shelving_time).toLocaleString('zh-CN', { 
           year: 'numeric', 
           month: '2-digit', 
@@ -300,7 +314,8 @@ function CenterReturnManagement() {
       '客服指令',
       '上架时间',
       '下达指令时间',
-      '下架时间'
+      '下架时间',
+      '最后操作用户'
     ]
 
     // 状态和指令的映射
@@ -324,7 +339,8 @@ function CenterReturnManagement() {
       instructionMap[pkg.customer_service || pkg.customerService] || '',
       pkg.shelving_time_display || pkg.shelvingTimeDisplay || '',
       pkg.instruction_time_display || pkg.instructionTimeDisplay || '',
-      pkg.unshelving_time_display || pkg.unshelvingTimeDisplay || ''
+      pkg.unshelving_time_display || pkg.unshelvingTimeDisplay || '',
+      pkg.last_modified_by_username || '-'
     ])
 
     // 组合CSV
@@ -349,8 +365,15 @@ function CenterReturnManagement() {
 
   const handleUpdatePackage = async (updates) => {
     try {
-      // 更新到 Supabase
-      await updatePackage(currentPackage.id, updates)
+      // 获取当前用户ID
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      // 更新到 Supabase，添加操作用户信息
+      await updatePackage(currentPackage.id, {
+        ...updates,
+        last_modified_by: user?.id,
+        last_modified_at: new Date().toISOString()
+      })
       
       // 重新加载数据
       await loadPackages()
@@ -617,6 +640,7 @@ function CenterReturnManagement() {
                   <th>上架时间</th>
                   <th>下达指令时间</th>
                   <th>下架时间</th>
+                  <th>最后操作用户</th>
                   {(userRole === 'admin' || userRole === 'manager') && <th>操作</th>}
                 </tr>
               </thead>
@@ -637,6 +661,7 @@ function CenterReturnManagement() {
                     <td className="package-time">{pkg.shelving_time_display || pkg.shelvingTimeDisplay || '-'}</td>
                     <td className="package-time">{pkg.instruction_time_display || pkg.instructionTimeDisplay || '-'}</td>
                     <td className="package-time">{pkg.unshelving_time_display || pkg.unshelvingTimeDisplay || '-'}</td>
+                    <td><span className="username-badge">{pkg.last_modified_by_username}</span></td>
                     {(userRole === 'admin' || userRole === 'manager') && (
                       <td>
                         <button

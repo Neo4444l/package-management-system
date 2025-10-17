@@ -1,0 +1,829 @@
+╔═══════════════════════════════════════════════════════════════╗
+║                                                               ║
+║          ✅ 添加用户名功能完成                                ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📝 功能概述
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+新增功能：
+=========
+1. 为用户系统添加"用户名"字段
+2. 在"用户管理"中显示和创建用户名
+3. 在"中心退回管理"中显示最后操作用户
+4. 记录每次操作的用户信息
+
+
+优化原因：
+=========
+✅ 邮箱太长，不适合作为显示名称
+✅ 用户名简洁明了，便于识别
+✅ 追踪包裹操作历史，明确责任人
+✅ 提高系统可追溯性
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🗄️ 数据库变更
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+步骤1：在Supabase中运行SQL脚本
+============================
+
+请在 Supabase → SQL Editor 中运行以下脚本：
+文件：添加用户名功能-SQL脚本.sql
+
+
+脚本内容概览：
+============
+
+1. 为 profiles 表添加 username 字段
+----------------------------------
+```sql
+ALTER TABLE profiles
+ADD COLUMN IF NOT EXISTS username VARCHAR(50) UNIQUE;
+```
+
+- 字段类型：VARCHAR(50)
+- 唯一约束：不能重复
+- 可选字段：新用户必须提供
+
+
+2. 为现有用户生成默认用户名
+---------------------------
+```sql
+UPDATE profiles
+SET username = SPLIT_PART(email, '@', 1)
+WHERE username IS NULL;
+```
+
+- 自动从邮箱提取用户名（@ 前面的部分）
+- 例如：neo4444l.zhang@gmail.com → neo4444l.zhang
+- 现有用户自动获得用户名
+
+
+3. 为 packages 表添加操作用户字段
+-------------------------------
+```sql
+ALTER TABLE packages
+ADD COLUMN IF NOT EXISTS last_modified_by UUID REFERENCES profiles(id);
+
+ALTER TABLE packages
+ADD COLUMN IF NOT EXISTS last_modified_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+```
+
+- last_modified_by：记录最后操作用户的ID
+- last_modified_at：记录最后操作时间
+- 外键关联：关联到profiles表
+
+
+4. 创建自动更新触发器
+-------------------
+```sql
+CREATE OR REPLACE FUNCTION update_packages_last_modified()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.last_modified_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_packages_last_modified
+  BEFORE UPDATE ON packages
+  FOR EACH ROW
+  EXECUTE FUNCTION update_packages_last_modified();
+```
+
+- 自动更新 last_modified_at 字段
+- 每次更新包裹时自动记录时间
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👥 用户管理模块变更
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. 用户列表表格新增"用户名"列
+===========================
+
+文件：src/components/UserManagement.jsx
+
+表格列顺序（修改后）：
+--------------------
+┌────────┬──────────┬────────┬────────┬────────┬────────┬────────────┬────────┐
+│ 邮箱   │ 用户名   │ 姓名   │ 角色   │ 部门   │ 状态   │ 注册时间   │ 操作   │
+└────────┴──────────┴────────┴────────┴────────┴────────┴────────────┴────────┘
+            ↑ 新增
+
+
+显示效果：
+---------
+邮箱列：neo4444l.zhang@gmail.com
+用户名列：neo4444l.zhang (粗体显示)
+姓名列：张三
+
+
+代码修改：
+---------
+```jsx
+<thead>
+  <tr>
+    <th>邮箱</th>
+    <th>用户名</th>  {/* ← 新增 */}
+    <th>姓名</th>
+    <th>角色</th>
+    <th>部门</th>
+    <th>状态</th>
+    <th>注册时间</th>
+    <th>操作</th>
+  </tr>
+</thead>
+<tbody>
+  {users.map(user => (
+    <tr key={user.id}>
+      <td>{user.email}</td>
+      <td><strong>{user.username || '-'}</strong></td>  {/* ← 新增 */}
+      <td>{user.full_name || '-'}</td>
+      ...
+    </tr>
+  ))}
+</tbody>
+```
+
+
+2. 创建新用户表单新增"用户名"输入
+===============================
+
+表单字段顺序（修改后）：
+----------------------
+1. 邮箱
+2. 用户名 ← 新增
+3. 初始密码
+4. 角色
+
+
+表单界面：
+---------
+┌─────────────────────────────────────────┐
+│           创建新用户                     │
+├─────────────────────────────────────────┤
+│  邮箱                                    │
+│  [请输入用户邮箱...........................] │
+│                                         │
+│  用户名                                  │
+│  [请输入用户名（至少2位）...............] │
+│  💡 用户名用于系统显示，不能重复        │
+│                                         │
+│  初始密码                                │
+│  [请输入初始密码（至少6位）.............] │
+│                                         │
+│  角色                                    │
+│  [普通用户 ▼]                            │
+│                                         │
+│  [创建]  [取消]                          │
+└─────────────────────────────────────────┘
+
+
+代码修改：
+---------
+```jsx
+<div className="form-group">
+  <label>邮箱</label>
+  <input
+    type="email"
+    value={newUserEmail}
+    onChange={(e) => setNewUserEmail(e.target.value)}
+    placeholder="请输入用户邮箱"
+    required
+  />
+</div>
+
+{/* 新增：用户名输入框 */}
+<div className="form-group">
+  <label>用户名</label>
+  <input
+    type="text"
+    value={newUserUsername}
+    onChange={(e) => setNewUserUsername(e.target.value)}
+    placeholder="请输入用户名（至少2位）"
+    required
+    minLength={2}
+    maxLength={50}
+  />
+  <small style={{color: '#666', fontSize: '0.85em'}}>
+    用户名用于系统显示，不能重复
+  </small>
+</div>
+```
+
+
+3. 创建用户时的验证逻辑
+====================
+
+验证规则：
+---------
+✅ 用户名至少2个字符
+✅ 用户名最多50个字符
+✅ 用户名不能重复
+✅ 自动去除首尾空格
+
+
+代码实现：
+---------
+```javascript
+const handleCreateUser = async (e) => {
+  e.preventDefault()
+  
+  // 验证用户名长度
+  if (!newUserUsername || newUserUsername.trim().length < 2) {
+    throw new Error('用户名至少需要2个字符')
+  }
+
+  // 检查用户名是否已存在
+  const { data: existingUser } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('username', newUserUsername.trim())
+    .single()
+
+  if (existingUser) {
+    throw new Error('用户名已存在，请使用其他用户名')
+  }
+
+  // 创建用户并保存用户名
+  const { data, error } = await supabase.auth.signUp({
+    email: newUserEmail,
+    password: newUserPassword
+  })
+
+  if (data.user) {
+    await supabase
+      .from('profiles')
+      .update({ 
+        role: newUserRole,
+        username: newUserUsername.trim()  // 保存用户名
+      })
+      .eq('id', data.user.id)
+  }
+  
+  setSuccess('用户创建成功！')
+}
+```
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📦 中心退回管理模块变更
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. 表格新增"最后操作用户"列
+=========================
+
+文件：src/pages/CenterReturnManagement.jsx
+
+表格列顺序（修改后）：
+--------------------
+┌─┬────────┬────────┬────────┬──────────┬────────────┬────────────────┬────────────┬────────────────┬────────┐
+│☑│ 运单号 │ 库位   │ 状态   │ 客服指令 │ 上架时间   │ 下达指令时间   │ 下架时间   │ 最后操作用户   │ 操作   │
+└─┴────────┴────────┴────────┴──────────┴────────────┴────────────────┴────────────┴────────────────┴────────┘
+                                                                                        ↑ 新增
+
+
+位置：在"下架时间"和"操作"列之间
+
+
+显示样式：
+---------
+用户名以紫色渐变徽章形式显示：
+```
+[neo4444l.zhang]  ← 紫色渐变背景，白色文字，圆角
+```
+
+
+代码修改：
+---------
+```jsx
+<thead>
+  <tr>
+    <th>运单号</th>
+    <th>库位</th>
+    <th>状态</th>
+    <th>客服指令</th>
+    <th>上架时间</th>
+    <th>下达指令时间</th>
+    <th>下架时间</th>
+    <th>最后操作用户</th>  {/* ← 新增 */}
+    {(userRole === 'admin' || userRole === 'manager') && <th>操作</th>}
+  </tr>
+</thead>
+<tbody>
+  {filteredPackages.map((pkg) => (
+    <tr key={pkg.id}>
+      <td>{pkg.package_number}</td>
+      <td>{pkg.location}</td>
+      <td>{getStatusBadge(pkg.package_status)}</td>
+      <td>{getInstructionBadge(pkg.customer_service)}</td>
+      <td>{pkg.shelving_time_display}</td>
+      <td>{pkg.instruction_time_display}</td>
+      <td>{pkg.unshelving_time_display}</td>
+      <td>
+        <span className="username-badge">
+          {pkg.last_modified_by_username}  {/* ← 新增 */}
+        </span>
+      </td>
+      ...
+    </tr>
+  ))}
+</tbody>
+```
+
+
+CSS样式：
+--------
+```css
+.username-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: 500;
+}
+```
+
+
+2. 数据加载时关联用户信息
+=======================
+
+使用Supabase的外键查询功能：
+--------------------------
+```javascript
+const loadPackages = async () => {
+  const { data: allPackages, error } = await supabase
+    .from('packages')
+    .select(`
+      *,
+      last_modified_by_profile:last_modified_by (
+        username,
+        email
+      )
+    `)
+    .order('created_at', { ascending: false })
+
+  // 提取用户名
+  const packagesWithUsername = allPackages.map(pkg => ({
+    ...pkg,
+    last_modified_by_username: pkg.last_modified_by_profile?.username || '-'
+  }))
+  
+  setPackages(packagesWithUsername)
+}
+```
+
+
+3. 修改包裹时自动记录操作用户
+===========================
+
+单个修改（"管理"按钮）：
+----------------------
+```javascript
+const handleUpdatePackage = async (updates) => {
+  // 获取当前用户ID
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  // 更新包裹并记录操作用户
+  await updatePackage(currentPackage.id, {
+    ...updates,
+    last_modified_by: user?.id,
+    last_modified_at: new Date().toISOString()
+  })
+  
+  await loadPackages()
+}
+```
+
+
+批量修改（"指令下达"按钮）：
+--------------------------
+```javascript
+const handleUpdateInstruction = async (instruction) => {
+  // 获取当前用户ID
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  // 批量更新并记录操作用户
+  const updatePromises = selectedPackages.map(pkgId => 
+    updatePackage(pkgId, {
+      customer_service: instruction,
+      package_status: 'pending-removal',
+      instruction_time: new Date().toISOString(),
+      last_modified_by: user?.id,  // ← 记录操作用户
+      last_modified_at: new Date().toISOString()
+    })
+  )
+  
+  await Promise.all(updatePromises)
+  await loadPackages()
+}
+```
+
+
+4. CSV导出包含最后操作用户
+========================
+
+导出文件列顺序：
+--------------
+1. 运单号
+2. 库位
+3. 包裹状态
+4. 客服指令
+5. 上架时间
+6. 下达指令时间
+7. 下架时间
+8. 最后操作用户 ← 新增
+
+
+代码修改：
+---------
+```javascript
+const headers = [
+  '运单号',
+  '库位',
+  '包裹状态',
+  '客服指令',
+  '上架时间',
+  '下达指令时间',
+  '下架时间',
+  '最后操作用户'  // ← 新增
+]
+
+const rows = selectedData.map(pkg => [
+  pkg.package_number || '',
+  pkg.location || '',
+  statusMap[pkg.package_status] || '',
+  instructionMap[pkg.customer_service] || '',
+  pkg.shelving_time_display || '',
+  pkg.instruction_time_display || '',
+  pkg.unshelving_time_display || '',
+  pkg.last_modified_by_username || '-'  // ← 新增
+])
+```
+
+
+导出效果示例：
+------------
+```csv
+运单号,库位,包裹状态,客服指令,上架时间,下达指令时间,下架时间,最后操作用户
+"123456789","A-001","待下架","重派","2025-01-15 10:30:25","2025-01-16 14:20:10","-","neo4444l.zhang"
+"987654321","B-002","已下架","退回客户","2025-01-14 09:15:00","2025-01-15 11:30:00","2025-01-17 08:45:00","admin"
+```
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎨 UI效果展示
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. 用户管理 - 用户列表
+====================
+
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│ 邮箱                        │ 用户名          │ 姓名   │ 角色     │ 状态   │ 操作   │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│ neo4444l.zhang@gmail.com   │ neo4444l.zhang  │ 张三   │ 管理员   │ 激活   │ ...    │
+│ manager@example.com        │ manager         │ 李四   │ 经理     │ 激活   │ ...    │
+│ user@example.com           │ user            │ 王五   │ 普通用户 │ 激活   │ ...    │
+└────────────────────────────────────────────────────────────────────────────────────┘
+                                  ↑ 新增列，粗体显示
+
+
+2. 创建新用户弹窗
+================
+
+┌───────────────────────────────────────┐
+│          创建新用户                   │
+├───────────────────────────────────────┤
+│ 邮箱                                  │
+│ [newuser@example.com...............]  │
+│                                       │
+│ 用户名                    ← 新增     │
+│ [newuser.........................]   │
+│ 💡 用户名用于系统显示，不能重复       │
+│                                       │
+│ 初始密码                              │
+│ [••••••.........................]    │
+│                                       │
+│ 角色                                  │
+│ [普通用户 ▼]                          │
+│                                       │
+│    [创建]     [取消]                  │
+└───────────────────────────────────────┘
+
+
+3. 中心退回管理 - 运单列表
+========================
+
+┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│ 运单号    │ 库位  │ 状态   │ 指令   │ 上架时间          │ 指令时间          │ 下架时间          │ 操作用户          │ 操作 │
+├──────────────────────────────────────────────────────────────────────────────────────────┤
+│ 123456789 │ A-001 │ 待下架 │ 重派   │ 2025-01-15 10:30 │ 2025-01-16 14:20 │ -                 │ [neo4444l.zhang] │ 管理 │
+│ 987654321 │ B-002 │ 已下架 │ 退回   │ 2025-01-14 09:15 │ 2025-01-15 11:30 │ 2025-01-17 08:45 │ [manager]        │ 管理 │
+└──────────────────────────────────────────────────────────────────────────────────────────┘
+                                                                                  ↑ 新增列（紫色徽章）
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔄 操作流程
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+场景1：创建新用户
+===============
+
+步骤：
+1. 管理员进入"用户管理"
+2. 点击"创建新用户"按钮
+3. 填写表单：
+   - 邮箱：newuser@example.com
+   - 用户名：newuser
+   - 密码：123456
+   - 角色：普通用户
+4. 点击"创建"
+
+结果：
+✅ 用户创建成功
+✅ 用户列表中显示新用户及其用户名
+✅ 新用户可以使用邮箱和密码登录
+
+
+场景2：修改包裹状态
+=================
+
+用户：neo4444l.zhang
+操作：
+1. 进入"中心退回管理"
+2. 点击某运单的"管理"按钮
+3. 修改状态为"待下架"
+4. 点击保存
+
+结果：
+✅ 包裹状态更新
+✅ last_modified_by 字段记录为 neo4444l.zhang 的用户ID
+✅ last_modified_at 字段更新为当前时间
+✅ 表格中"最后操作用户"列显示"neo4444l.zhang"
+
+
+场景3：批量下达指令
+=================
+
+用户：manager
+操作：
+1. 进入"中心退回管理"
+2. 勾选5个包裹
+3. 点击"指令下达"
+4. 选择"重派"
+5. 确认
+
+结果：
+✅ 5个包裹的客服指令更新为"重派"
+✅ 5个包裹的状态更新为"待下架"
+✅ 5个包裹的 last_modified_by 都记录为 manager 的用户ID
+✅ 所有5个包裹在表格中的"最后操作用户"列都显示"manager"
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📝 修改的文件
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+数据库脚本：
+==========
+✅ 添加用户名功能-SQL脚本.sql（新建）
+
+
+前端文件：
+=========
+✅ src/components/UserManagement.jsx
+   - 添加 newUserUsername 状态
+   - 添加用户名输入框
+   - 添加用户名验证逻辑
+   - 表格新增用户名列
+
+✅ src/pages/CenterReturnManagement.jsx
+   - 修改 loadPackages 查询关联用户
+   - 修改 handleUpdatePackage 记录操作用户
+   - 修改 handleUpdateInstruction 记录操作用户
+   - 表格新增"最后操作用户"列
+   - CSV导出新增用户名列
+
+✅ src/pages/CenterReturnManagement.css
+   - 添加 .username-badge 样式
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🧪 测试验证
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+测试1：运行SQL脚本
+================
+
+步骤：
+1. 登录 Supabase
+2. 进入 SQL Editor
+3. 复制"添加用户名功能-SQL脚本.sql"的内容
+4. 点击"Run"执行
+
+预期结果：
+✅ profiles 表新增 username 列
+✅ 现有用户自动获得用户名（从邮箱提取）
+✅ packages 表新增 last_modified_by 和 last_modified_at 列
+✅ 触发器创建成功
+✅ 无错误信息
+
+
+测试2：查看现有用户的用户名
+=========================
+
+步骤：
+1. 在 Supabase 中运行：
+   ```sql
+   SELECT id, email, username FROM profiles;
+   ```
+
+预期结果：
+✅ 所有用户都有 username
+✅ username 是从邮箱中提取的（@ 前面部分）
+✅ 例如：neo4444l.zhang@gmail.com → neo4444l.zhang
+
+
+测试3：创建新用户（带用户名）
+===========================
+
+步骤：
+1. 刷新浏览器
+2. 进入"用户管理"
+3. 点击"创建新用户"
+4. 填写表单：
+   - 邮箱：testuser@example.com
+   - 用户名：testuser
+   - 密码：123456
+   - 角色：普通用户
+5. 点击"创建"
+
+预期结果：
+✅ 用户创建成功提示
+✅ 用户列表中显示新用户
+✅ 用户名列显示"testuser"（粗体）
+✅ 邮箱列显示"testuser@example.com"
+
+
+测试4：用户名重复验证
+==================
+
+步骤：
+1. 尝试创建用户名为"testuser"的新用户
+2. 提交表单
+
+预期结果：
+❌ 显示错误："用户名已存在，请使用其他用户名"
+✅ 用户未创建
+✅ 表单保持打开状态
+
+
+测试5：查看运单操作用户
+====================
+
+步骤：
+1. 进入"中心退回管理"
+2. 查看表格
+
+预期结果：
+✅ 表格显示"最后操作用户"列
+✅ 旧数据显示"-"（无操作记录）
+✅ 列位于"下架时间"和"操作"之间
+
+
+测试6：修改包裹并验证操作用户
+===========================
+
+步骤：
+1. 使用用户"testuser"登录
+2. 进入"中心退回管理"
+3. 点击某运单的"管理"按钮
+4. 修改状态为"待下架"
+5. 保存
+
+预期结果：
+✅ 包裹状态更新成功
+✅ 该运单的"最后操作用户"列显示"testuser"
+✅ 用户名以紫色徽章显示
+
+
+测试7：批量操作并验证用户
+=======================
+
+步骤：
+1. 使用管理员账号登录
+2. 进入"中心退回管理"
+3. 勾选3个包裹
+4. 点击"指令下达"
+5. 选择"重派"
+
+预期结果：
+✅ 3个包裹的指令更新为"重派"
+✅ 3个包裹的"最后操作用户"都显示管理员的用户名
+✅ 用户名显示一致
+
+
+测试8：CSV导出包含用户名
+======================
+
+步骤：
+1. 在"中心退回管理"中勾选几个包裹
+2. 点击"导出数据"
+3. 打开下载的CSV文件
+
+预期结果：
+✅ CSV文件包含"最后操作用户"列
+✅ 用户名正确显示
+✅ 列顺序正确
+✅ 数据完整
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 使用建议
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+用户名命名建议：
+==============
+✅ 使用英文或拼音（更通用）
+✅ 简短易记（建议3-15字符）
+✅ 使用小写字母和数字
+✅ 可以使用点、下划线（如：zhang.san, user_001）
+❌ 避免使用特殊字符
+❌ 避免过长的用户名
+
+
+示例：
+=====
+好的用户名：
+- zhang.san
+- admin
+- manager1
+- user_001
+- neo4444l
+
+不推荐的用户名：
+- neo4444l.zhang@gmail.com（太长，像邮箱）
+- 张三（可能导致编码问题）
+- user#123（特殊字符）
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎉 总结
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+新增功能：
+=========
+✅ 用户管理表格新增"用户名"列
+✅ 创建新用户时必须提供用户名
+✅ 用户名唯一性验证
+✅ 中心退回管理新增"最后操作用户"列
+✅ 自动记录每次操作的用户
+✅ CSV导出包含操作用户信息
+
+数据库变更：
+===========
+✅ profiles 表新增 username 字段
+✅ packages 表新增 last_modified_by 字段
+✅ packages 表新增 last_modified_at 字段
+✅ 自动更新时间戳触发器
+
+优化效果：
+=========
+✅ 用户标识更简洁明了
+✅ 操作历史可追溯
+✅ 责任人明确
+✅ 系统管理更规范
+
+修改文件：
+=========
+✓ 添加用户名功能-SQL脚本.sql（新建）
+✓ src/components/UserManagement.jsx
+✓ src/pages/CenterReturnManagement.jsx
+✓ src/pages/CenterReturnManagement.css
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📌 立即操作：
+
+1. 在 Supabase SQL Editor 中运行脚本：
+   文件：添加用户名功能-SQL脚本.sql
+   
+2. 刷新浏览器（Ctrl+Shift+R）
+
+3. 进入"用户管理"查看用户名列
+
+4. 创建测试用户验证功能
+
+5. 在"中心退回管理"中修改包裹，查看操作用户显示
+
+用户名功能已完成！🎉
+

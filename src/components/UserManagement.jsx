@@ -15,6 +15,7 @@ export default function UserManagement() {
   const [pendingRoleChanges, setPendingRoleChanges] = useState({})
   const [showCreateUser, setShowCreateUser] = useState(false)
   const [newUserEmail, setNewUserEmail] = useState('')
+  const [newUserUsername, setNewUserUsername] = useState('')
   const [newUserPassword, setNewUserPassword] = useState('')
   const [newUserRole, setNewUserRole] = useState('user')
 
@@ -188,6 +189,21 @@ export default function UserManagement() {
         throw new Error('密码至少需要6个字符')
       }
 
+      if (!newUserUsername || newUserUsername.trim().length < 2) {
+        throw new Error('用户名至少需要2个字符')
+      }
+
+      // 检查用户名是否已存在
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', newUserUsername.trim())
+        .single()
+
+      if (existingUser) {
+        throw new Error('用户名已存在，请使用其他用户名')
+      }
+
       // 创建新用户
       const { data, error } = await supabase.auth.signUp({
         email: newUserEmail,
@@ -199,11 +215,14 @@ export default function UserManagement() {
 
       if (error) throw error
 
-      // 更新用户角色
+      // 更新用户角色和用户名
       if (data.user) {
         const { error: profileError } = await supabase
           .from('profiles')
-          .update({ role: newUserRole })
+          .update({ 
+            role: newUserRole,
+            username: newUserUsername.trim()
+          })
           .eq('id', data.user.id)
 
         if (profileError) throw profileError
@@ -212,6 +231,7 @@ export default function UserManagement() {
       setSuccess('用户创建成功！')
       setShowCreateUser(false)
       setNewUserEmail('')
+      setNewUserUsername('')
       setNewUserPassword('')
       setNewUserRole('user')
       
@@ -342,6 +362,7 @@ export default function UserManagement() {
           <thead>
             <tr>
               <th>邮箱</th>
+              <th>用户名</th>
               <th>姓名</th>
               <th>角色</th>
               <th>部门</th>
@@ -354,6 +375,7 @@ export default function UserManagement() {
             {users.map(user => (
               <tr key={user.id} className={!user.is_active ? 'inactive-row' : ''}>
                 <td>{user.email}</td>
+                <td><strong>{user.username || '-'}</strong></td>
                 <td>{user.full_name || '-'}</td>
                 <td>
                   <span className={`role-badge ${getRoleBadgeClass(user.role)}`}>
@@ -444,6 +466,21 @@ export default function UserManagement() {
                 />
               </div>
               <div className="form-group">
+                <label>用户名</label>
+                <input
+                  type="text"
+                  value={newUserUsername}
+                  onChange={(e) => setNewUserUsername(e.target.value)}
+                  placeholder="请输入用户名（至少2位）"
+                  required
+                  minLength={2}
+                  maxLength={50}
+                />
+                <small style={{color: '#666', fontSize: '0.85em'}}>
+                  用户名用于系统显示，不能重复
+                </small>
+              </div>
+              <div className="form-group">
                 <label>初始密码</label>
                 <input
                   type="password"
@@ -476,6 +513,7 @@ export default function UserManagement() {
                   onClick={() => {
                     setShowCreateUser(false)
                     setNewUserEmail('')
+                    setNewUserUsername('')
                     setNewUserPassword('')
                     setNewUserRole('user')
                   }}
