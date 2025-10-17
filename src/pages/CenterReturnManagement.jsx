@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../supabaseClient'
 import { getAllPackages, updatePackage, deletePackage } from '../services/dataService'
 import './CenterReturnManagement.css'
 
@@ -14,6 +15,7 @@ function CenterReturnManagement() {
   const [showActionModal, setShowActionModal] = useState(false)
   const [showManageModal, setShowManageModal] = useState(false)
   const [currentPackage, setCurrentPackage] = useState(null)
+  const [isOnline, setIsOnline] = useState(true)
   const [timeFilter, setTimeFilter] = useState({
     type: '',
     startDate: '',
@@ -23,6 +25,46 @@ function CenterReturnManagement() {
   // 从 Supabase 加载包裹数据
   useEffect(() => {
     loadPackages()
+  }, [])
+
+  // 🔄 实时监听包裹变化
+  useEffect(() => {
+    const subscription = supabase
+      .channel('packages-center-return')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'packages'
+        },
+        (payload) => {
+          console.log('📦 包裹数据变化（中心退回管理）：', payload)
+          
+          if (payload.eventType === 'INSERT') {
+            // 新增包裹
+            setPackages(prev => {
+              if (prev.some(p => p.id === payload.new.id)) return prev
+              return [payload.new, ...prev]
+            })
+          } else if (payload.eventType === 'UPDATE') {
+            // 包裹更新
+            setPackages(prev => prev.map(p => 
+              p.id === payload.new.id ? payload.new : p
+            ))
+          } else if (payload.eventType === 'DELETE') {
+            // 包裹删除
+            setPackages(prev => prev.filter(p => p.id !== payload.old.id))
+            setSelectedPackages(prev => prev.filter(id => id !== payload.old.id))
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('🔗 中心退回管理订阅状态：', status)
+        setIsOnline(status === 'SUBSCRIBED')
+      })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   const loadPackages = async () => {
@@ -316,6 +358,13 @@ function CenterReturnManagement() {
 
   return (
     <div className="center-return-page">
+      {/* 离线指示器 */}
+      {!isOnline && (
+        <div className="offline-indicator">
+          ⚠️ 连接已断开，正在重连...
+        </div>
+      )}
+
       {notification && (
         <div className={`notification ${notification.type}`}>
           {notification.message}

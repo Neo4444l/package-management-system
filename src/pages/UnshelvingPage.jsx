@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../supabaseClient'
 import { getAllPackages, updatePackage } from '../services/dataService'
 import './UnshelvingPage.css'
 
@@ -10,6 +11,7 @@ function UnshelvingPage() {
   const [searchInput, setSearchInput] = useState('')
   const [matchedPackage, setMatchedPackage] = useState(null)
   const [notification, setNotification] = useState(null)
+  const [isOnline, setIsOnline] = useState(true)
   const inputRef = useRef(null)
   const audioRef = useRef(null)
 
@@ -19,6 +21,62 @@ function UnshelvingPage() {
   // 加载需要下架的包裹
   useEffect(() => {
     loadPackages()
+  }, [])
+
+  // 🔄 实时监听包裹变化
+  useEffect(() => {
+    const subscription = supabase
+      .channel('packages-unshelving')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'packages'
+        },
+        (payload) => {
+          console.log('📦 包裹数据变化（下架页面）：', payload)
+          
+          if (payload.eventType === 'INSERT') {
+            // 新增包裹
+            const newPkg = payload.new
+            if ((newPkg.package_status || newPkg.packageStatus) === PENDING_REMOVAL_STATUS) {
+              setPackages(prev => {
+                if (prev.some(p => p.id === newPkg.id)) return prev
+                return [newPkg, ...prev]
+              })
+              updateGroupedPackages()
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            // 包裹状态更新
+            const updatedPkg = payload.new
+            if ((updatedPkg.package_status || updatedPkg.packageStatus) === PENDING_REMOVAL_STATUS) {
+              // 更新为待下架状态，添加到列表
+              setPackages(prev => {
+                const existing = prev.find(p => p.id === updatedPkg.id)
+                if (existing) {
+                  return prev.map(p => p.id === updatedPkg.id ? updatedPkg : p)
+                }
+                return [updatedPkg, ...prev]
+              })
+            } else {
+              // 不是待下架状态，从列表移除
+              setPackages(prev => prev.filter(p => p.id !== updatedPkg.id))
+            }
+            updateGroupedPackages()
+          } else if (payload.eventType === 'DELETE') {
+            // 包裹被删除
+            setPackages(prev => prev.filter(p => p.id !== payload.old.id))
+            updateGroupedPackages()
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('🔗 下架页面订阅状态：', status)
+        setIsOnline(status === 'SUBSCRIBED')
+      })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   // 自动聚焦输入框
@@ -34,21 +92,24 @@ function UnshelvingPage() {
         (pkg.package_status || pkg.packageStatus) === PENDING_REMOVAL_STATUS
       )
       setPackages(unshelvingPackages)
-      
-      // 按库位分组
-      const grouped = {}
-      unshelvingPackages.forEach(pkg => {
-        const location = pkg.location || '未知库位'
-        if (!grouped[location]) {
-          grouped[location] = []
-        }
-        grouped[location].push(pkg)
-      })
-      setGroupedPackages(grouped)
+      updateGroupedPackages(unshelvingPackages)
     } catch (error) {
       console.error('Error loading packages:', error)
       showNotification('加载包裹数据失败', 'error')
     }
+  }
+
+  const updateGroupedPackages = (pkgs = packages) => {
+    // 按库位分组
+    const grouped = {}
+    pkgs.forEach(pkg => {
+      const location = pkg.location || '未知库位'
+      if (!grouped[location]) {
+        grouped[location] = []
+      }
+      grouped[location].push(pkg)
+    })
+    setGroupedPackages(grouped)
   }
 
   const showNotification = (message, type = 'success') => {
@@ -132,6 +193,13 @@ function UnshelvingPage() {
 
   return (
     <div className="unshelving-page">
+      {/* 离线指示器 */}
+      {!isOnline && (
+        <div className="offline-indicator">
+          ⚠️ 连接已断开，正在重连...
+        </div>
+      )}
+
       {notification && (
         <div className={`notification ${notification.type}`}>
           {notification.message}

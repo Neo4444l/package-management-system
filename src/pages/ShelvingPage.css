@@ -162,6 +162,13 @@
   cursor: pointer;
   transition: all 0.3s ease;
   color: #333;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .location-button:hover {
