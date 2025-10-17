@@ -17,7 +17,12 @@ function CenterReturnManagement() {
   const [currentPackage, setCurrentPackage] = useState(null)
   const [isOnline, setIsOnline] = useState(true)
   const [timeFilter, setTimeFilter] = useState({
-    type: '',
+    type: 'shelving',  // 默认选中"上架时间"
+    startDate: '',
+    endDate: ''
+  })
+  const [appliedTimeFilter, setAppliedTimeFilter] = useState({
+    type: 'shelving',
     startDate: '',
     endDate: ''
   })
@@ -70,8 +75,39 @@ function CenterReturnManagement() {
   const loadPackages = async () => {
     try {
       const allPackages = await getAllPackages()
-      setPackages(allPackages)
-      filterPackages(allPackages, activeTab, searchQuery)
+      // 格式化时间字段
+      const packagesWithFormattedTime = allPackages.map(pkg => ({
+        ...pkg,
+        shelving_time_display: pkg.shelving_time ? new Date(pkg.shelving_time).toLocaleString('zh-CN', { 
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit', 
+          hour: '2-digit', 
+          minute: '2-digit', 
+          second: '2-digit',
+          hour12: false 
+        }).replace(/\//g, '-') : '-',
+        unshelving_time_display: pkg.unshelving_time ? new Date(pkg.unshelving_time).toLocaleString('zh-CN', { 
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit', 
+          hour: '2-digit', 
+          minute: '2-digit', 
+          second: '2-digit',
+          hour12: false 
+        }).replace(/\//g, '-') : '-',
+        instruction_time_display: pkg.instruction_time ? new Date(pkg.instruction_time).toLocaleString('zh-CN', { 
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit', 
+          hour: '2-digit', 
+          minute: '2-digit', 
+          second: '2-digit',
+          hour12: false 
+        }).replace(/\//g, '-') : '-'
+      }))
+      setPackages(packagesWithFormattedTime)
+      filterPackages(packagesWithFormattedTime, activeTab, searchQuery)
     } catch (error) {
       console.error('Error loading packages:', error)
       showNotification('加载包裹数据失败', 'error')
@@ -114,14 +150,14 @@ function CenterReturnManagement() {
       })
     }
 
-    // 按时间过滤
-    if (timeFilter.type && timeFilter.startDate && timeFilter.endDate) {
-      const startTime = new Date(timeFilter.startDate).getTime()
-      const endTime = new Date(timeFilter.endDate).getTime() + 86400000 // 加一天包含结束日期
+    // 按时间过滤（使用 appliedTimeFilter）
+    if (appliedTimeFilter.type && appliedTimeFilter.startDate && appliedTimeFilter.endDate) {
+      const startTime = new Date(appliedTimeFilter.startDate).getTime()
+      const endTime = new Date(appliedTimeFilter.endDate).getTime() + 86400000 // 加一天包含结束日期
 
       filtered = filtered.filter(pkg => {
         let targetTime = null
-        switch (timeFilter.type) {
+        switch (appliedTimeFilter.type) {
           case 'shelving':
             targetTime = (pkg.shelving_time || pkg.shelvingTime) ? new Date(pkg.shelving_time || pkg.shelvingTime).getTime() : null
             break
@@ -143,7 +179,7 @@ function CenterReturnManagement() {
 
   useEffect(() => {
     filterPackages(packages, activeTab, searchQuery)
-  }, [activeTab, searchQuery, packages, timeFilter])
+  }, [activeTab, searchQuery, packages, appliedTimeFilter])
 
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type })
@@ -400,7 +436,6 @@ function CenterReturnManagement() {
             value={timeFilter.type}
             onChange={(e) => setTimeFilter({ ...timeFilter, type: e.target.value })}
           >
-            <option value="">选择时间类型</option>
             <option value="shelving">上架时间</option>
             <option value="unshelving">下架时间</option>
             <option value="instruction">下达指令时间</option>
@@ -420,10 +455,22 @@ function CenterReturnManagement() {
             onChange={(e) => setTimeFilter({ ...timeFilter, endDate: e.target.value })}
             placeholder="结束日期"
           />
-          {(timeFilter.type || timeFilter.startDate || timeFilter.endDate) && (
+          {(timeFilter.startDate || timeFilter.endDate) && (
+            <button 
+              className="filter-apply-button"
+              onClick={() => setAppliedTimeFilter(timeFilter)}
+              disabled={!timeFilter.startDate || !timeFilter.endDate}
+            >
+              进行筛选
+            </button>
+          )}
+          {(appliedTimeFilter.startDate || appliedTimeFilter.endDate) && (
             <button 
               className="filter-clear-button"
-              onClick={() => setTimeFilter({ type: '', startDate: '', endDate: '' })}
+              onClick={() => {
+                setTimeFilter({ type: 'shelving', startDate: '', endDate: '' })
+                setAppliedTimeFilter({ type: 'shelving', startDate: '', endDate: '' })
+              }}
             >
               清除筛选
             </button>
