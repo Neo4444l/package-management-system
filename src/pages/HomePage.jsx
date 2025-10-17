@@ -1,9 +1,11 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import './HomePage.css'
+import packageInfo from '../../package.json'
 
 function HomePage() {
   const navigate = useNavigate()
+  const version = packageInfo.version
 
   const modules = [
     {
@@ -57,7 +59,7 @@ function HomePage() {
         </div>
 
         <footer className="home-footer">
-          <p>&copy; 2025 包裹管理系统. All rights reserved.</p>
+          <p>&copy; 2025 包裹管理系统_版本{version}. All rights reserved.</p>
         </footer>
       </div>
     </div>

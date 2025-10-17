@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { supabase } from './supabaseClient'
 import Login from './components/Login'
 import UserManagement from './components/UserManagement'
-import DataMigration from './components/DataMigration'
 import HomePage from './pages/HomePage'
 import ShelvingPage from './pages/ShelvingPage'
 import ShelvingInput from './pages/ShelvingInput'
@@ -107,14 +106,9 @@ function App() {
             </span>
           )}
           {userRole === 'admin' && (
-            <>
-              <a href="/user-management" className="btn-manage-users">
-                👥 用户管理
-              </a>
-              <a href="/data-migration" className="btn-manage-users" style={{ background: 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)' }}>
-                ☁️ 数据迁移
-              </a>
-            </>
+            <a href="/user-management" className="btn-manage-users">
+              👥 用户管理
+            </a>
           )}
           <button onClick={handleLogout} className="btn-logout">
             退出登录
@@ -129,8 +123,7 @@ function App() {
           <Route path="/return-dashboard" element={<ReturnDashboard />} />
           <Route path="/return-dashboard/location-management" element={<LocationManagement />} />
           <Route path="/return-dashboard/center-return" element={<CenterReturnManagement />} />
-          <Route path="/user-management" element={<UserManagement />} />
-          <Route path="/data-migration" element={<DataMigration />} />
+            <Route path="/user-management" element={<UserManagement />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
