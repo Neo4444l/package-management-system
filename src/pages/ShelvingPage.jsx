@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
-import { getAllLocations } from '../services/dataService'
+import { getAllLocations, getAllPackages } from '../services/dataService'
 import './ShelvingPage.css'
 
 function ShelvingPage() {
@@ -9,10 +9,12 @@ function ShelvingPage() {
   const [selectedLocation, setSelectedLocation] = useState('')
   const [locations, setLocations] = useState([])
   const [isOnline, setIsOnline] = useState(true)
+  const [packageCounts, setPackageCounts] = useState({})  // 每个库位的包裹数量
 
   // 从 Supabase 加载库位选项
   useEffect(() => {
     loadLocations()
+    loadPackageCounts()  // 加载包裹数量
   }, [])
 
   const loadLocations = async () => {
@@ -24,9 +26,29 @@ function ShelvingPage() {
     }
   }
 
+  const loadPackageCounts = async () => {
+    try {
+      const allPackages = await getAllPackages()
+      // 统计每个库位的包裹数量（只统计"在库内"和"待下架"的包裹）
+      const counts = {}
+      allPackages.forEach(pkg => {
+        const status = pkg.package_status || pkg.packageStatus
+        if (status === 'in-warehouse' || status === 'pending-removal') {
+          const location = pkg.location
+          if (location) {
+            counts[location] = (counts[location] || 0) + 1
+          }
+        }
+      })
+      setPackageCounts(counts)
+    } catch (error) {
+      console.error('Error loading package counts:', error)
+    }
+  }
+
   // 🔄 实时监听库位变化
   useEffect(() => {
-    const subscription = supabase
+    const locationSubscription = supabase
       .channel('locations-shelving-page')
       .on(
         'postgres_changes',
@@ -56,8 +78,30 @@ function ShelvingPage() {
         setIsOnline(status === 'SUBSCRIBED')
       })
 
-    return () => subscription.unsubscribe()
+    return () => locationSubscription.unsubscribe()
   }, [selectedLocation])
+
+  // 🔄 实时监听包裹变化，更新数量统计
+  useEffect(() => {
+    const packageSubscription = supabase
+      .channel('packages-shelving-counts')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'packages'
+        },
+        (payload) => {
+          console.log('📦 包裹数据变化（库位统计）：', payload)
+          // 重新加载包裹数量统计
+          loadPackageCounts()
+        }
+      )
+      .subscribe()
+
+    return () => packageSubscription.unsubscribe()
+  }, [])
 
   const handleLocationSelect = (location) => {
     setSelectedLocation(location)
@@ -111,15 +155,19 @@ function ShelvingPage() {
               </div>
 
               <div className="location-grid">
-                {locations.map((location) => (
-                  <button
-                    key={location.id}
-                    className={`location-button ${selectedLocation === location.code ? 'selected' : ''}`}
-                    onClick={() => handleLocationSelect(location.code)}
-                  >
-                    {location.code}
-                  </button>
-                ))}
+                {locations.map((location) => {
+                  const count = packageCounts[location.code] || 0
+                  return (
+                    <button
+                      key={location.id}
+                      className={`location-button ${selectedLocation === location.code ? 'selected' : ''}`}
+                      onClick={() => handleLocationSelect(location.code)}
+                    >
+                      <span className="location-code">{location.code}</span>
+                      <span className="package-count">{count} 件</span>
+                    </button>
+                  )
+                })}
               </div>
             </>
           )}

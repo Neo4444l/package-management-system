@@ -158,9 +158,10 @@ function UnshelvingPage() {
 
     if (matched) {
       try {
-        // 找到匹配，更新到 Supabase
+        // 找到匹配，更新到 Supabase（使用正确的字段名：snake_case）
         await updatePackage(matched.id, {
-          packageStatus: 'removed'
+          package_status: 'removed',  // 修复：使用 snake_case
+          unshelving_time: new Date().toISOString()  // 添加下架时间
         })
 
         // 显示匹配结果和强提醒（保留直到下次匹配）
