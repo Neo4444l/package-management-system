@@ -28,6 +28,45 @@
   }
 }
 
+/* 通知消息 */
+.notification {
+  position: fixed;
+  top: 100px;  /* 调整到用户信息栏下方 */
+  right: 20px;
+  padding: 15px 25px;
+  border-radius: 10px;
+  font-weight: 500;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  z-index: 999;  /* 略低于用户信息栏 */
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.notification.success {
+  background: #4CAF50;
+  color: white;
+}
+
+.notification.error {
+  background: #f44336;
+  color: white;
+}
+
+.notification.info {
+  background: #2196F3;
+  color: white;
+}
+
 .center-return-container {
   max-width: 1400px;
   margin: 0 auto;

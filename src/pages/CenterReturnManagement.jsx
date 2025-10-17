@@ -278,8 +278,8 @@ function CenterReturnManagement() {
       '包裹状态',
       '客服指令',
       '上架时间',
-      '下架时间',
-      '下达指令时间'
+      '下达指令时间',
+      '下架时间'
     ]
 
     // 状态和指令的映射
@@ -302,8 +302,8 @@ function CenterReturnManagement() {
       statusMap[pkg.package_status || pkg.packageStatus] || '',
       instructionMap[pkg.customer_service || pkg.customerService] || '',
       pkg.shelving_time_display || pkg.shelvingTimeDisplay || '',
-      pkg.unshelving_time_display || pkg.unshelvingTimeDisplay || '',
-      pkg.instruction_time_display || pkg.instructionTimeDisplay || ''
+      pkg.instruction_time_display || pkg.instructionTimeDisplay || '',
+      pkg.unshelving_time_display || pkg.unshelvingTimeDisplay || ''
     ])
 
     // 组合CSV
@@ -590,8 +590,8 @@ function CenterReturnManagement() {
                   <th>状态</th>
                   <th>客服指令</th>
                   <th>上架时间</th>
-                  <th>下架时间</th>
                   <th>下达指令时间</th>
+                  <th>下架时间</th>
                   <th>操作</th>
                 </tr>
               </thead>
@@ -610,8 +610,8 @@ function CenterReturnManagement() {
                     <td>{getStatusBadge(pkg.package_status || pkg.packageStatus)}</td>
                     <td>{getInstructionBadge(pkg.customer_service || pkg.customerService)}</td>
                     <td className="package-time">{pkg.shelving_time_display || pkg.shelvingTimeDisplay || '-'}</td>
-                    <td className="package-time">{pkg.unshelving_time_display || pkg.unshelvingTimeDisplay || '-'}</td>
                     <td className="package-time">{pkg.instruction_time_display || pkg.instructionTimeDisplay || '-'}</td>
+                    <td className="package-time">{pkg.unshelving_time_display || pkg.unshelvingTimeDisplay || '-'}</td>
                     <td>
                       <button
                         className="quick-action-button"
