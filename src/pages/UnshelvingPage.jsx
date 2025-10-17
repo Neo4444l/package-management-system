@@ -45,7 +45,7 @@ function UnshelvingPage() {
                 if (prev.some(p => p.id === newPkg.id)) return prev
                 return [newPkg, ...prev]
               })
-              updateGroupedPackages()
+              // 不再立即调用 updateGroupedPackages()，让 useEffect 处理
             }
           } else if (payload.eventType === 'UPDATE') {
             // 包裹状态更新
@@ -63,11 +63,11 @@ function UnshelvingPage() {
               // 不是待下架状态，从列表移除
               setPackages(prev => prev.filter(p => p.id !== updatedPkg.id))
             }
-            updateGroupedPackages()
+            // 不再立即调用 updateGroupedPackages()，让 useEffect 处理
           } else if (payload.eventType === 'DELETE') {
             // 包裹被删除
             setPackages(prev => prev.filter(p => p.id !== payload.old.id))
-            updateGroupedPackages()
+            // 不再立即调用 updateGroupedPackages()，让 useEffect 处理
           }
         }
       )
@@ -78,6 +78,11 @@ function UnshelvingPage() {
 
     return () => subscription.unsubscribe()
   }, [])
+
+  // 🔄 当 packages 变化时，自动更新分组
+  useEffect(() => {
+    updateGroupedPackages(packages)
+  }, [packages])
 
   // 自动聚焦输入框
   useEffect(() => {
