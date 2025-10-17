@@ -16,6 +16,7 @@ function CenterReturnManagement() {
   const [showManageModal, setShowManageModal] = useState(false)
   const [currentPackage, setCurrentPackage] = useState(null)
   const [isOnline, setIsOnline] = useState(true)
+  const [userRole, setUserRole] = useState(null)  // 用户角色
   const [timeFilter, setTimeFilter] = useState({
     type: 'shelving',  // 默认选中"上架时间"
     startDate: '',
@@ -30,6 +31,7 @@ function CenterReturnManagement() {
   // 从 Supabase 加载包裹数据
   useEffect(() => {
     loadPackages()
+    loadUserRole()
   }, [])
 
   // 🔄 实时监听包裹变化
@@ -71,6 +73,25 @@ function CenterReturnManagement() {
 
     return () => subscription.unsubscribe()
   }, [])
+
+  const loadUserRole = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+        
+        if (profile) {
+          setUserRole(profile.role)
+        }
+      }
+    } catch (error) {
+      console.error('Error loading user role:', error)
+    }
+  }
 
   const loadPackages = async () => {
     try {
@@ -548,20 +569,24 @@ function CenterReturnManagement() {
             >
               导出数据 📊
             </button>
-            <button
-              className="action-button"
-              onClick={() => setShowActionModal(true)}
-              disabled={selectedPackages.length === 0}
-            >
-              指令下达 📋
-            </button>
-            <button
-              className="delete-button-batch"
-              onClick={handleBatchDelete}
-              disabled={selectedPackages.length === 0}
-            >
-              删除运单 🗑️
-            </button>
+            {(userRole === 'admin' || userRole === 'manager') && (
+              <button
+                className="action-button"
+                onClick={() => setShowActionModal(true)}
+                disabled={selectedPackages.length === 0}
+              >
+                指令下达 📋
+              </button>
+            )}
+            {userRole === 'admin' && (
+              <button
+                className="delete-button-batch"
+                onClick={handleBatchDelete}
+                disabled={selectedPackages.length === 0}
+              >
+                删除运单 🗑️
+              </button>
+            )}
           </div>
         </div>
 
@@ -592,7 +617,7 @@ function CenterReturnManagement() {
                   <th>上架时间</th>
                   <th>下达指令时间</th>
                   <th>下架时间</th>
-                  <th>操作</th>
+                  {(userRole === 'admin' || userRole === 'manager') && <th>操作</th>}
                 </tr>
               </thead>
               <tbody>
@@ -612,17 +637,19 @@ function CenterReturnManagement() {
                     <td className="package-time">{pkg.shelving_time_display || pkg.shelvingTimeDisplay || '-'}</td>
                     <td className="package-time">{pkg.instruction_time_display || pkg.instructionTimeDisplay || '-'}</td>
                     <td className="package-time">{pkg.unshelving_time_display || pkg.unshelvingTimeDisplay || '-'}</td>
-                    <td>
-                      <button
-                        className="quick-action-button"
-                        onClick={() => {
-                          setCurrentPackage(pkg)
-                          setShowManageModal(true)
-                        }}
-                      >
-                        管理
-                      </button>
-                    </td>
+                    {(userRole === 'admin' || userRole === 'manager') && (
+                      <td>
+                        <button
+                          className="quick-action-button"
+                          onClick={() => {
+                            setCurrentPackage(pkg)
+                            setShowManageModal(true)
+                          }}
+                        >
+                          管理
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
