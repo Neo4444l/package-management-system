@@ -104,19 +104,60 @@ function LocationManagement() {
   }
 
   const handleDeleteLocation = async (id) => {
-    if (window.confirm('确定要删除这个库位吗？删除后将无法恢复。')) {
-      try {
-        // 从 Supabase 删除
-        await deleteLocation(id)
-        
-        const updatedLocations = locations.filter(loc => loc.id !== id)
-        setLocations(updatedLocations)
-        setSelectedLocations(selectedLocations.filter(sid => sid !== id))
-        showNotification('库位已从云端删除', 'success')
-      } catch (error) {
-        console.error('Error deleting location:', error)
-        showNotification('删除失败：' + error.message, 'error')
+    try {
+      // 获取该库位的code
+      const location = locations.find(l => l.id === id)
+      if (!location) return
+      
+      // 查询该库位有多少包裹
+      const { data: relatedPackages, error: queryError } = await supabase
+        .from('packages')
+        .select('id')
+        .eq('location', location.code)
+      
+      if (queryError) throw queryError
+      
+      const packageCount = relatedPackages?.length || 0
+      
+      // 确认提示
+      let confirmed = false
+      if (packageCount > 0) {
+        confirmed = window.confirm(
+          `⚠️ 警告：\n\n该库位（${location.code}）中有 ${packageCount} 个包裹。\n\n删除库位将同时删除这些包裹，此操作不可撤销！\n\n确定要继续吗？`
+        )
+      } else {
+        confirmed = window.confirm(
+          `确定要删除库位"${location.code}"吗？\n\n此操作不可撤销。`
+        )
       }
+      
+      if (!confirmed) return
+      
+      // 1. 先删除该库位的所有包裹
+      if (packageCount > 0) {
+        const { error: packagesError } = await supabase
+          .from('packages')
+          .delete()
+          .eq('location', location.code)
+        
+        if (packagesError) throw packagesError
+      }
+      
+      // 2. 再删除库位
+      await deleteLocation(id)
+      
+      const updatedLocations = locations.filter(loc => loc.id !== id)
+      setLocations(updatedLocations)
+      setSelectedLocations(selectedLocations.filter(sid => sid !== id))
+      
+      if (packageCount > 0) {
+        showNotification(`库位及其 ${packageCount} 个包裹已删除`, 'success')
+      } else {
+        showNotification('库位已从云端删除', 'success')
+      }
+    } catch (error) {
+      console.error('Error deleting location:', error)
+      showNotification('删除失败：' + error.message, 'error')
     }
   }
 

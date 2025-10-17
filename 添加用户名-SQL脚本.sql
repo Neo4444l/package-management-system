@@ -51,20 +51,6 @@ CREATE TRIGGER trigger_update_packages_last_modified
   EXECUTE FUNCTION update_packages_last_modified();
 
 
--- 步骤5：创建视图以便获取用户名
--- ========================================
-
-CREATE OR REPLACE VIEW packages_with_username AS
-SELECT 
-  p.*,
-  prof.username as last_modified_by_username,
-  prof.email as last_modified_by_email
-FROM packages p
-LEFT JOIN profiles prof ON p.last_modified_by = prof.id;
-
-COMMENT ON VIEW packages_with_username IS '包裹信息及最后操作用户名';
-
-
 -- ========================================
 -- 使用说明
 -- ========================================
@@ -83,5 +69,5 @@ COMMENT ON VIEW packages_with_username IS '包裹信息及最后操作用户名'
 -- SELECT id, email, username FROM profiles;
 
 -- 查看包裹及最后操作用户
--- SELECT * FROM packages_with_username LIMIT 10;
+-- SELECT p.*, prof.username FROM packages p LEFT JOIN profiles prof ON p.last_modified_by = prof.id LIMIT 10;
 

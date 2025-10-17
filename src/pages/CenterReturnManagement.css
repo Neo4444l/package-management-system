@@ -125,6 +125,34 @@
   flex-wrap: wrap;
 }
 
+.filter-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-clear-button {
+  padding: 8px 16px;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.filter-clear-button:hover {
+  background: #c0392b;
+  transform: translateY(-1px);
+}
+
 .filter-label {
   font-weight: 600;
   color: #333;

@@ -18,6 +18,9 @@ export default function UserManagement() {
   const [newUserUsername, setNewUserUsername] = useState('')
   const [newUserPassword, setNewUserPassword] = useState('')
   const [newUserRole, setNewUserRole] = useState('user')
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingUser, setEditingUser] = useState(null)
+  const [editUsername, setEditUsername] = useState('')
 
   useEffect(() => {
     fetchUsers()
@@ -54,7 +57,10 @@ export default function UserManagement() {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      setUsers(data || [])
+      
+      // 过滤掉可能的空记录或已删除的用户
+      const validUsers = (data || []).filter(user => user.email && user.id)
+      setUsers(validUsers)
     } catch (error) {
       setError('获取用户列表失败：' + error.message)
     } finally {
@@ -157,9 +163,10 @@ export default function UserManagement() {
         return
       }
 
+      const user = users.find(u => u.id === userId)
       // 二次确认
       const confirmed = window.confirm(
-        `⚠️ 警告：此操作不可撤销！\n\n确定要删除用户 "${userEmail}" 吗？\n\n删除后该用户将无法登录系统。`
+        `⚠️ 警告：此操作不可撤销！\n\n确定要删除用户 "${user?.username || userEmail}" 吗？\n\n删除后该用户将无法登录系统。`
       )
 
       if (!confirmed) return
@@ -172,10 +179,60 @@ export default function UserManagement() {
 
       if (error) throw error
 
-      setSuccess('用户已成功删除！')
+      setSuccess(`用户"${user?.username || userEmail}"已成功删除！`)
       await fetchUsers()
     } catch (error) {
       setError('删除失败：' + error.message)
+    }
+  }
+
+  const handleEditUser = (user) => {
+    setEditingUser(user)
+    setEditUsername(user.username || '')
+    setShowEditModal(true)
+  }
+
+  const handleSaveEdit = async () => {
+    try {
+      setError('')
+      setSuccess('')
+
+      // 验证用户名
+      if (!editUsername || editUsername.trim().length < 2) {
+        throw new Error('用户名至少需要2个字符')
+      }
+
+      // 检查用户名是否与其他用户重复
+      if (editUsername.trim() !== editingUser.username) {
+        const { data: existingUser } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('username', editUsername.trim())
+          .neq('id', editingUser.id)
+          .single()
+
+        if (existingUser) {
+          throw new Error('用户名已存在，请使用其他用户名')
+        }
+      }
+
+      // 更新profiles表
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          username: editUsername.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingUser.id)
+
+      if (profileError) throw profileError
+
+      setSuccess(`用户"${editUsername.trim()}"的信息已更新！`)
+      setShowEditModal(false)
+      setEditingUser(null)
+      await fetchUsers()
+    } catch (error) {
+      setError('更新失败：' + error.message)
     }
   }
 
@@ -427,6 +484,14 @@ export default function UserManagement() {
                       {user.is_active ? '停用' : '激活'}
                     </button>
                     <button
+                      onClick={() => handleEditUser(user)}
+                      className="btn-edit"
+                      disabled={user.id === currentUserId}
+                      title={user.id === currentUserId ? '不能编辑自己' : '编辑用户名'}
+                    >
+                      ✏️
+                    </button>
+                    <button
                       onClick={() => handleDeleteUser(user.id, user.email)}
                       className="btn-delete"
                       disabled={user.id === currentUserId}
@@ -448,6 +513,59 @@ export default function UserManagement() {
           </div>
         )}
       </div>
+
+      {/* 编辑用户弹窗 */}
+      {showEditModal && editingUser && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>编辑用户信息</h2>
+            <form onSubmit={(e) => {
+              e.preventDefault()
+              handleSaveEdit()
+            }}>
+              <div className="form-group">
+                <label>邮箱</label>
+                <input
+                  type="email"
+                  value={editingUser.email}
+                  disabled
+                  style={{background: '#f5f5f5', cursor: 'not-allowed', color: '#999'}}
+                />
+                <small style={{color: '#999', fontSize: '0.85em'}}>
+                  ℹ️ 邮箱不可修改，如需更改请删除用户后重新创建
+                </small>
+              </div>
+              <div className="form-group">
+                <label>用户名</label>
+                <input
+                  type="text"
+                  value={editUsername}
+                  onChange={(e) => setEditUsername(e.target.value)}
+                  placeholder="请输入用户名"
+                  required
+                  minLength={2}
+                  maxLength={50}
+                />
+              </div>
+              <div className="modal-buttons">
+                <button type="submit" className="btn-submit">
+                  保存
+                </button>
+                <button 
+                  type="button" 
+                  className="btn-cancel-modal"
+                  onClick={() => {
+                    setShowEditModal(false)
+                    setEditingUser(null)
+                  }}
+                >
+                  取消
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* 创建用户弹窗 */}
       {showCreateUser && (

@@ -27,6 +27,8 @@ function CenterReturnManagement() {
     startDate: '',
     endDate: ''
   })
+  const [locationFilter, setLocationFilter] = useState('')  // 库位筛选
+  const [availableLocations, setAvailableLocations] = useState([])  // 可用库位列表
 
   // 从 Supabase 加载包裹数据
   useEffect(() => {
@@ -100,7 +102,7 @@ function CenterReturnManagement() {
         .from('packages')
         .select(`
           *,
-          last_modified_by_profile:last_modified_by (
+          last_modified_by_profile:profiles!last_modified_by (
             username,
             email
           )
@@ -142,6 +144,11 @@ function CenterReturnManagement() {
         }).replace(/\//g, '-') : '-'
       }))
       setPackages(packagesWithFormattedTime)
+      
+      // 提取所有唯一的库位号
+      const locations = [...new Set(packagesWithFormattedTime.map(pkg => pkg.location).filter(Boolean))]
+      setAvailableLocations(locations.sort())
+      
       filterPackages(packagesWithFormattedTime, activeTab, searchQuery)
     } catch (error) {
       console.error('Error loading packages:', error)
@@ -185,6 +192,11 @@ function CenterReturnManagement() {
       })
     }
 
+    // 按库位筛选
+    if (locationFilter) {
+      filtered = filtered.filter(pkg => pkg.location === locationFilter)
+    }
+
     // 按时间过滤（使用 appliedTimeFilter）
     if (appliedTimeFilter.type && appliedTimeFilter.startDate && appliedTimeFilter.endDate) {
       const startTime = new Date(appliedTimeFilter.startDate).getTime()
@@ -214,7 +226,7 @@ function CenterReturnManagement() {
 
   useEffect(() => {
     filterPackages(packages, activeTab, searchQuery)
-  }, [activeTab, searchQuery, packages, appliedTimeFilter])
+  }, [activeTab, searchQuery, packages, appliedTimeFilter, locationFilter])
 
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type })
@@ -471,6 +483,28 @@ function CenterReturnManagement() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+        </div>
+
+        <div className="filter-section">
+          <div className="filter-label">库位筛选：</div>
+          <select
+            className="filter-select"
+            value={locationFilter}
+            onChange={(e) => setLocationFilter(e.target.value)}
+          >
+            <option value="">全部库位</option>
+            {availableLocations.map(loc => (
+              <option key={loc} value={loc}>{loc}</option>
+            ))}
+          </select>
+          {locationFilter && (
+            <button
+              className="filter-clear-button"
+              onClick={() => setLocationFilter('')}
+            >
+              清除
+            </button>
+          )}
         </div>
 
         <div className="time-filter-section">
