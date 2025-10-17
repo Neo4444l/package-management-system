@@ -708,6 +708,18 @@ function CenterReturnManagement() {
                 <span className="manage-label">库位：</span>
                 <span className="manage-value">{currentPackage.location}</span>
               </div>
+              <div className="manage-info-row">
+                <span className="manage-label">上架时间：</span>
+                <span className="manage-value">{currentPackage.shelving_time_display || '-'}</span>
+              </div>
+              <div className="manage-info-row">
+                <span className="manage-label">下达指令时间：</span>
+                <span className="manage-value">{currentPackage.instruction_time_display || '-'}</span>
+              </div>
+              <div className="manage-info-row">
+                <span className="manage-label">下架时间：</span>
+                <span className="manage-value">{currentPackage.unshelving_time_display || '-'}</span>
+              </div>
             </div>
 
             <div className="manage-edit-section">

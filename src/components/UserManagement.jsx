@@ -145,6 +145,39 @@ export default function UserManagement() {
     }
   }
 
+  const handleDeleteUser = async (userId, userEmail) => {
+    try {
+      setError('')
+      setSuccess('')
+
+      // 防止删除自己
+      if (userId === currentUserId) {
+        setError('不能删除当前登录的用户！')
+        return
+      }
+
+      // 二次确认
+      const confirmed = window.confirm(
+        `⚠️ 警告：此操作不可撤销！\n\n确定要删除用户 "${userEmail}" 吗？\n\n删除后该用户将无法登录系统。`
+      )
+
+      if (!confirmed) return
+
+      // 从profiles表删除用户
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId)
+
+      if (error) throw error
+
+      setSuccess('用户已成功删除！')
+      await fetchUsers()
+    } catch (error) {
+      setError('删除失败：' + error.message)
+    }
+  }
+
   const handleCreateUser = async (e) => {
     e.preventDefault()
     setError('')
@@ -340,6 +373,7 @@ export default function UserManagement() {
                       value={pendingRoleChanges[user.id] || user.role}
                       onChange={(e) => handleRoleChange(user.id, e.target.value)}
                       className="role-select"
+                      disabled={user.id === currentUserId}
                     >
                       <option value="user">普通用户</option>
                       <option value="manager">经理</option>
@@ -366,8 +400,17 @@ export default function UserManagement() {
                     <button
                       onClick={() => toggleUserStatus(user.id, user.is_active)}
                       className={`btn-toggle ${user.is_active ? 'btn-deactivate' : 'btn-activate'}`}
+                      disabled={user.id === currentUserId}
                     >
                       {user.is_active ? '停用' : '激活'}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteUser(user.id, user.email)}
+                      className="btn-delete"
+                      disabled={user.id === currentUserId}
+                      title={user.id === currentUserId ? '不能删除自己' : '删除用户'}
+                    >
+                      🗑️
                     </button>
                   </div>
                 </td>
