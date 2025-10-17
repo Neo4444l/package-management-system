@@ -641,19 +641,19 @@ function CenterReturnManagement() {
               <div className="status-buttons">
                 <button
                   className={`status-edit-button ${(currentPackage.package_status || currentPackage.packageStatus) === 'in-warehouse' ? 'active' : ''}`}
-                  onClick={() => handleUpdatePackage({ packageStatus: 'in-warehouse' })}
+                  onClick={() => handleUpdatePackage({ package_status: 'in-warehouse' })}
                 >
                   在库内
                 </button>
                 <button
                   className={`status-edit-button ${(currentPackage.package_status || currentPackage.packageStatus) === 'pending-removal' ? 'active' : ''}`}
-                  onClick={() => handleUpdatePackage({ packageStatus: 'pending-removal' })}
+                  onClick={() => handleUpdatePackage({ package_status: 'pending-removal' })}
                 >
                   待下架
                 </button>
                 <button
                   className={`status-edit-button ${(currentPackage.package_status || currentPackage.packageStatus) === 'removed' ? 'active' : ''}`}
-                  onClick={() => handleUpdatePackage({ packageStatus: 'removed' })}
+                  onClick={() => handleUpdatePackage({ package_status: 'removed' })}
                 >
                   已下架
                 </button>
@@ -663,25 +663,25 @@ function CenterReturnManagement() {
               <div className="instruction-buttons">
                 <button
                   className={`instruction-edit-button ${(currentPackage.customer_service || currentPackage.customerService) === 're-dispatch' ? 'active' : ''}`}
-                  onClick={() => handleUpdatePackage({ customerService: 're-dispatch' })}
+                  onClick={() => handleUpdatePackage({ customer_service: 're-dispatch' })}
                 >
                   重派
                 </button>
                 <button
                   className={`instruction-edit-button ${(currentPackage.customer_service || currentPackage.customerService) === 're-dispatch-new-label' ? 'active' : ''}`}
-                  onClick={() => handleUpdatePackage({ customerService: 're-dispatch-new-label' })}
+                  onClick={() => handleUpdatePackage({ customer_service: 're-dispatch-new-label' })}
                 >
                   重派（新面单）
                 </button>
                 <button
                   className={`instruction-edit-button ${(currentPackage.customer_service || currentPackage.customerService) === 'return-to-customer' ? 'active' : ''}`}
-                  onClick={() => handleUpdatePackage({ customerService: 'return-to-customer' })}
+                  onClick={() => handleUpdatePackage({ customer_service: 'return-to-customer' })}
                 >
                   退回客户
                 </button>
                 <button
                   className={`instruction-edit-button ${!(currentPackage.customer_service || currentPackage.customerService) ? 'active' : ''}`}
-                  onClick={() => handleUpdatePackage({ customerService: null })}
+                  onClick={() => handleUpdatePackage({ customer_service: null })}
                 >
                   清除指令
                 </button>

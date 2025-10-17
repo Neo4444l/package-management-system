@@ -253,7 +253,7 @@ function UnshelvingPage() {
           <div 
             className="match-result-card"
             style={{ 
-              background: `linear-gradient(135deg, ${getInstructionColor(matchedPackage.customerService)} 0%, ${getInstructionColor(matchedPackage.customerService)}dd 100%)`
+              background: `linear-gradient(135deg, ${getInstructionColor(matchedPackage.customer_service || matchedPackage.customerService)} 0%, ${getInstructionColor(matchedPackage.customer_service || matchedPackage.customerService)}dd 100%)`
             }}
           >
             <div className="match-header">
@@ -282,7 +282,11 @@ function UnshelvingPage() {
               </div>
               <div className="match-info-row">
                 <span className="match-label">上架时间：</span>
-                <span className="match-value">{matchedPackage.shelving_time_display || matchedPackage.shelvingTimeDisplay}</span>
+                <span className="match-value">
+                  {matchedPackage.shelving_time_display || 
+                   matchedPackage.shelvingTimeDisplay || 
+                   (matchedPackage.shelving_time ? new Date(matchedPackage.shelving_time).toLocaleString('zh-CN') : '-')}
+                </span>
               </div>
             </div>
             <div className="match-success-indicator">
