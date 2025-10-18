@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react'
+import React, { createContext, useState, useEffect, useContext, useRef } from 'react'
 import { supabase } from '../supabaseClient'
 
 const CityContext = createContext()
@@ -14,46 +14,49 @@ export const AVAILABLE_CITIES = [
 
 export const CityProvider = ({ children }) => {
   const [currentCity, setCurrentCity] = useState(() => {
-    // 从 localStorage 获取上次选择的城市
     return localStorage.getItem('currentCity') || 'MIA'
   })
   const [userCities, setUserCities] = useState([])
   const [userRole, setUserRole] = useState(null)
   const [loading, setLoading] = useState(true)
+  
+  // 使用 ref 防止重复加载
+  const isLoadingRef = useRef(false)
+  const hasLoadedRef = useRef(false)
 
-  // 加载用户的城市权限
+  // 只在挂载时加载一次
   useEffect(() => {
-    loadUserCities()
-  }, [])
-
-  // 监听用户登录状态变化
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN') {
-        await loadUserCities()
-      } else if (event === 'SIGNED_OUT') {
-        setUserCities([])
-        setUserRole(null)
-        setCurrentCity('MIA')
-        localStorage.removeItem('currentCity')
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
+    if (!hasLoadedRef.current && !isLoadingRef.current) {
+      loadUserCities()
+    }
+  }, []) // 空依赖数组，只执行一次
 
   const loadUserCities = async () => {
+    // 防止重复调用
+    if (isLoadingRef.current || hasLoadedRef.current) {
+      console.log('⚠️ CityContext: 已经在加载或已加载，跳过')
+      return
+    }
+
+    isLoadingRef.current = true
+    setLoading(true)
+
     try {
-      setLoading(true)
+      console.log('🔄 CityContext: 开始加载用户城市权限...')
+      
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
+        console.log('❌ CityContext: 未登录')
         setLoading(false)
+        isLoadingRef.current = false
         return
       }
 
-      // 添加超时保护（5秒）
-      const timeout = new Promise((_, reject) => 
+      console.log('✅ CityContext: 用户已登录 -', user.email)
+
+      // 添加超时保护
+      const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('查询超时')), 5000)
       )
 
@@ -63,9 +66,18 @@ export const CityProvider = ({ children }) => {
         .eq('id', user.id)
         .single()
 
-      const { data: profile, error } = await Promise.race([queryPromise, timeout])
+      const { data: profile, error } = await Promise.race([queryPromise, timeoutPromise])
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ CityContext: 查询失败:', error)
+        throw error
+      }
+
+      console.log('✅ CityContext: 数据获取成功 -', {
+        role: profile.role,
+        cities: profile.cities,
+        current_city: profile.current_city
+      })
 
       const cities = profile.cities || []
       setUserRole(profile.role)
@@ -74,70 +86,71 @@ export const CityProvider = ({ children }) => {
       let accessibleCities = cities
       if (profile.role === 'super_admin') {
         accessibleCities = AVAILABLE_CITIES.map(c => c.code)
+        console.log('✅ CityContext: Super Admin - 所有城市可访问')
       }
       setUserCities(accessibleCities)
 
-      // 设置当前城市（修复逻辑）
+      // 设置当前城市
       const savedCity = localStorage.getItem('currentCity')
       
-      // 验证并设置城市
       if (savedCity && accessibleCities.includes(savedCity)) {
-        // localStorage 中的城市有效
+        console.log('✅ CityContext: 使用已保存的城市 -', savedCity)
         setCurrentCity(savedCity)
       } else if (profile.current_city && accessibleCities.includes(profile.current_city)) {
-        // 使用数据库中的城市
+        console.log('✅ CityContext: 使用数据库城市 -', profile.current_city)
         setCurrentCity(profile.current_city)
         localStorage.setItem('currentCity', profile.current_city)
       } else if (accessibleCities.length > 0) {
-        // 使用第一个可访问的城市
         const defaultCity = accessibleCities[0]
+        console.log('✅ CityContext: 使用默认城市 -', defaultCity)
         setCurrentCity(defaultCity)
         localStorage.setItem('currentCity', defaultCity)
-        
-        // 同步到数据库
-        await supabase
-          .from('profiles')
-          .update({ current_city: defaultCity })
-          .eq('id', user.id)
       } else {
-        // 没有任何城市权限，默认 MIA
-        console.warn('用户没有任何城市权限，使用默认城市 MIA')
+        console.warn('⚠️ CityContext: 用户没有任何城市权限，使用 MIA')
         setCurrentCity('MIA')
         setUserCities(['MIA'])
         localStorage.setItem('currentCity', 'MIA')
       }
+
+      hasLoadedRef.current = true
+      console.log('✅ CityContext: 加载完成')
     } catch (error) {
-      console.error('加载用户城市权限失败:', error)
+      console.error('❌ CityContext: 加载失败:', error)
       
       // 错误时使用安全的默认值
       setCurrentCity('MIA')
       setUserCities(['MIA'])
       setUserRole(null)
       localStorage.setItem('currentCity', 'MIA')
+      hasLoadedRef.current = true
     } finally {
       setLoading(false)
+      isLoadingRef.current = false
     }
   }
 
   const changeCity = async (cityCode) => {
-    // 检查用户是否有该城市的权限
+    console.log('🔄 CityContext: 请求切换城市 -', currentCity, '→', cityCode)
+    
+    // 检查权限
     if (!userCities.includes(cityCode) && userRole !== 'super_admin') {
-      console.error('无权访问该城市:', cityCode)
+      console.error('❌ CityContext: 无权访问该城市')
       alert('您没有权限访问该城市')
       return false
     }
 
-    const previousCity = currentCity // 保存之前的城市，用于回退
+    const previousCity = currentCity
     
     try {
-      // 先更新本地状态（乐观更新）
+      // 乐观更新：先更新本地状态
       setCurrentCity(cityCode)
       localStorage.setItem('currentCity', cityCode)
+      console.log('✅ CityContext: 本地状态已更新')
 
-      // 保存到数据库（带超时保护）
+      // 后台同步到数据库（带超时）
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        const timeout = new Promise((_, reject) => 
+        const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('更新超时')), 3000)
         )
 
@@ -146,13 +159,19 @@ export const CityProvider = ({ children }) => {
           .update({ current_city: cityCode })
           .eq('id', user.id)
 
-        await Promise.race([updatePromise, timeout])
+        await Promise.race([updatePromise, timeoutPromise])
+        console.log('✅ CityContext: 数据库已同步')
       }
       
-      console.log(`✅ 城市切换成功: ${previousCity} → ${cityCode}`)
+      // 刷新页面加载新城市数据
+      setTimeout(() => {
+        console.log('🔄 CityContext: 刷新页面...')
+        window.location.reload()
+      }, 100)
+      
       return true
     } catch (error) {
-      console.error('切换城市失败:', error)
+      console.error('❌ CityContext: 切换失败:', error)
       
       // 回退到之前的城市
       setCurrentCity(previousCity)
@@ -190,6 +209,25 @@ export const CityProvider = ({ children }) => {
     isSuperAdmin: userRole === 'super_admin'
   }
 
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '18px',
+        flexDirection: 'column',
+        gap: '20px'
+      }}>
+        <div>🔄 加载中...</div>
+        <div style={{ fontSize: '14px', color: '#666' }}>
+          正在初始化城市信息...
+        </div>
+      </div>
+    )
+  }
+
   return (
     <CityContext.Provider value={value}>
       {children}
@@ -204,4 +242,3 @@ export const useCity = () => {
   }
   return context
 }
-
