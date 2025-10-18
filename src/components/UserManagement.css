@@ -207,7 +207,8 @@
 .users-table-container {
   background: transparent;
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: visible;
   border: 1px solid #e0e0e0;
 }
 
@@ -215,6 +216,7 @@
   width: 100%;
   border-collapse: collapse;
   background: white;
+  table-layout: auto;
 }
 
 .users-table thead {
@@ -223,15 +225,25 @@
 }
 
 .users-table th {
-  padding: 15px;
+  padding: 15px 10px;
   text-align: left;
   font-weight: 600;
   font-size: 0.95em;
+  white-space: nowrap;
+}
+
+.users-table th:last-child {
+  min-width: 420px;
 }
 
 .users-table td {
-  padding: 15px;
+  padding: 15px 10px;
   border-bottom: 1px solid #eee;
+  white-space: nowrap;
+}
+
+.users-table td:last-child {
+  white-space: nowrap;
 }
 
 .users-table tbody tr {
@@ -290,9 +302,9 @@
 
 .action-buttons {
   display: flex;
-  gap: 10px;
+  gap: 6px;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .confirm-buttons {
@@ -301,12 +313,12 @@
 }
 
 .btn-confirm {
-  padding: 6px 12px;
+  padding: 5px 10px;
   background: #27ae60;
   color: white;
   border: none;
   border-radius: 6px;
-  font-size: 1em;
+  font-size: 0.9em;
   cursor: pointer;
   transition: all 0.3s;
   font-weight: bold;
@@ -319,12 +331,12 @@
 }
 
 .btn-cancel {
-  padding: 6px 12px;
+  padding: 5px 10px;
   background: #e74c3c;
   color: white;
   border: none;
   border-radius: 6px;
-  font-size: 1em;
+  font-size: 0.9em;
   cursor: pointer;
   transition: all 0.3s;
   font-weight: bold;
@@ -337,12 +349,13 @@
 }
 
 .role-select {
-  padding: 6px 10px;
+  padding: 5px 8px;
   border: 2px solid #e0e0e0;
   border-radius: 6px;
-  font-size: 0.9em;
+  font-size: 0.85em;
   cursor: pointer;
   transition: border-color 0.3s;
+  min-width: 90px;
 }
 
 .role-select:hover {
@@ -355,13 +368,14 @@
 }
 
 .btn-toggle {
-  padding: 6px 12px;
+  padding: 5px 10px;
   border: none;
   border-radius: 6px;
-  font-size: 0.9em;
+  font-size: 0.85em;
   cursor: pointer;
   transition: all 0.3s;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .btn-activate {
@@ -385,15 +399,14 @@
 }
 
 .btn-edit {
-  padding: 6px 12px;
+  padding: 5px 10px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 1.2em;
+  font-size: 1em;
   background: #3498db;
   color: white;
   transition: all 0.2s;
-  margin-left: 5px;
 }
 
 .btn-edit:hover:not(:disabled) {
@@ -408,15 +421,14 @@
 }
 
 .btn-delete {
-  padding: 6px 12px;
+  padding: 5px 10px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 1.2em;
+  font-size: 1em;
   background: #e74c3c;
   color: white;
   transition: all 0.2s;
-  margin-left: 5px;
 }
 
 .btn-delete:hover:not(:disabled) {
@@ -570,17 +582,7 @@
   }
 
   .users-table {
-    min-width: 800px;
-  }
-
-  .action-buttons {
-    flex-direction: column;
-    gap: 5px;
-  }
-
-  .role-select,
-  .btn-toggle {
-    width: 100%;
+    min-width: 1000px;
   }
   
   .header-content {

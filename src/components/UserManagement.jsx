@@ -179,7 +179,12 @@ export default function UserManagement() {
 
       if (error) throw error
 
+      // 立即从state中移除该用户，确保UI立即更新
+      setUsers(prevUsers => prevUsers.filter(u => u.id !== userId))
+      
       setSuccess(`用户"${user?.username || userEmail}"已成功删除！`)
+      
+      // 同时刷新数据以确保数据一致性
       await fetchUsers()
     } catch (error) {
       setError('删除失败：' + error.message)
