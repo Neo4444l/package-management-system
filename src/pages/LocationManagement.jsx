@@ -4,11 +4,13 @@ import QRCode from 'qrcode'
 import { supabase } from '../supabaseClient'
 import { addLocation, getAllLocations, deleteLocation } from '../services/dataService'
 import { useLanguage } from '../contexts/LanguageContext'
+import { useCity } from '../contexts/CityContext'
 import './LocationManagement.css'
 
 function LocationManagement() {
   const navigate = useNavigate()
   const { t } = useLanguage()
+  const { currentCity } = useCity()
   const [locationInput, setLocationInput] = useState('')
   const [locations, setLocations] = useState([])
   const [notification, setNotification] = useState(null)
@@ -16,21 +18,26 @@ function LocationManagement() {
   const [isOnline, setIsOnline] = useState(true)
   const canvasRef = useRef(null)
 
-  // 从 Supabase 加载库位数据
+  // 从 Supabase 加载库位数据（城市过滤）
   useEffect(() => {
-    loadLocations()
-  }, [])
+    if (currentCity) {
+      loadLocations()
+    }
+  }, [currentCity])
 
-  // 🔄 实时监听库位变化
+  // 🔄 实时监听库位变化（城市过滤）
   useEffect(() => {
+    if (!currentCity) return
+
     const subscription = supabase
-      .channel('locations-management')
+      .channel(`locations-management-${currentCity}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'locations'
+          table: 'locations',
+          filter: `city=eq.${currentCity}` // 只监听当前城市的库位
         },
         (payload) => {
           console.log('📍 库位管理数据变化：', payload)
@@ -73,11 +80,11 @@ function LocationManagement() {
       })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [currentCity])
 
   const loadLocations = async () => {
     try {
-      const allLocations = await getAllLocations()
+      const allLocations = await getAllLocations(currentCity) // 传入当前城市
       // 格式化日期显示
       const locationsWithFormattedDate = allLocations.map(loc => ({
         ...loc,
@@ -119,8 +126,8 @@ function LocationManagement() {
     }
 
     try {
-      // 保存到 Supabase
-      const newLocation = await addLocation(locationInput.trim())
+      // 保存到 Supabase（传入当前城市）
+      const newLocation = await addLocation(locationInput.trim(), currentCity)
 
       // 格式化日期
       const formattedLocation = {
@@ -154,11 +161,12 @@ function LocationManagement() {
       const location = locations.find(l => l.id === id)
       if (!location) return
       
-      // 查询该库位有多少包裹
+      // 查询该库位有多少包裹（仅当前城市）
       const { data: relatedPackages, error: queryError } = await supabase
         .from('packages')
         .select('id')
         .eq('location', location.code)
+        .eq('city', currentCity) // 添加城市过滤
       
       if (queryError) throw queryError
       
@@ -178,12 +186,13 @@ function LocationManagement() {
       
       if (!confirmed) return
       
-      // 1. 先删除该库位的所有包裹
+      // 1. 先删除该库位的所有包裹（仅当前城市）
       if (packageCount > 0) {
         const { error: packagesError } = await supabase
           .from('packages')
           .delete()
           .eq('location', location.code)
+          .eq('city', currentCity) // 添加城市过滤
         
         if (packagesError) throw packagesError
       }

@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useLanguage } from '../contexts/LanguageContext'
+import { useCity } from '../contexts/CityContext'
 import './UserManagement.css'
 
 export default function UserManagement() {
   const navigate = useNavigate()
   const { t } = useLanguage()
+  const { cityOptions, isSuperAdmin } = useCity()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [currentUserId, setCurrentUserId] = useState(null)
@@ -20,9 +22,13 @@ export default function UserManagement() {
   const [newUserUsername, setNewUserUsername] = useState('')
   const [newUserPassword, setNewUserPassword] = useState('')
   const [newUserRole, setNewUserRole] = useState('user')
+  const [newUserCities, setNewUserCities] = useState(['MIA']) // 新用户默认 MIA
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
   const [editUsername, setEditUsername] = useState('')
+  const [editCities, setEditCities] = useState([]) // 编辑用户城市权限
+  const [showCityModal, setShowCityModal] = useState(false)
+  const [cityEditUser, setCityEditUser] = useState(null)
 
   useEffect(() => {
     fetchUsers()
@@ -319,6 +325,8 @@ export default function UserManagement() {
 
   const getRoleBadgeClass = (role) => {
     switch (role) {
+      case 'super_admin':
+        return 'badge-super-admin'
       case 'admin':
         return 'badge-admin'
       case 'manager':
@@ -330,6 +338,8 @@ export default function UserManagement() {
 
   const getRoleText = (role) => {
     switch (role) {
+      case 'super_admin':
+        return t('roles.super_admin')
       case 'admin':
         return t('roles.admin')
       case 'manager':
@@ -337,6 +347,60 @@ export default function UserManagement() {
       default:
         return t('roles.user')
     }
+  }
+  
+  // 获取城市名称列表
+  const getCityNames = (cities) => {
+    if (!cities || cities.length === 0) return t('city.noCityAccess')
+    return cities.map(code => {
+      const city = cityOptions.find(c => c.code === code)
+      return city ? city.name : code
+    }).join(', ')
+  }
+  
+  // 打开城市编辑 modal
+  const handleEditCities = (user) => {
+    setCityEditUser(user)
+    setEditCities(user.cities || [])
+    setShowCityModal(true)
+  }
+  
+  // 保存城市权限
+  const handleSaveCities = async () => {
+    if (!cityEditUser) return
+    
+    try {
+      setError('')
+      setSuccess('')
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          cities: editCities, 
+          current_city: editCities.length > 0 ? editCities[0] : null,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', cityEditUser.id)
+      
+      if (error) throw error
+      
+      setSuccess(t('city.cityPermissions') + ' ' + t('messages.updateSuccess'))
+      setShowCityModal(false)
+      await fetchUsers()
+    } catch (error) {
+      setError(t('messages.updateFailed') + ': ' + error.message)
+    }
+  }
+  
+  // 切换城市选择
+  const toggleCitySelection = (cityCode) => {
+    setEditCities(prev => {
+      if (prev.includes(cityCode)) {
+        return prev.filter(c => c !== cityCode)
+      } else {
+        return [...prev, cityCode]
+      }
+    })
   }
 
   // 角色加载中，显示加载状态
@@ -438,6 +502,7 @@ export default function UserManagement() {
               <th>{t('userManagement.username')}</th>
               <th>{t('userManagement.fullName')}</th>
               <th>{t('roles.role')}</th>
+              {isSuperAdmin && <th>{t('city.cityPermissions')}</th>}
               <th>{t('userManagement.department')}</th>
               <th>{t('userManagement.status')}</th>
               <th>{t('userManagement.registrationDate')}</th>
@@ -455,6 +520,20 @@ export default function UserManagement() {
                     {getRoleText(user.role)}
                   </span>
                 </td>
+                {isSuperAdmin && (
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '12px' }}>{getCityNames(user.cities)}</span>
+                      <button 
+                        className="btn-edit" 
+                        onClick={() => handleEditCities(user)}
+                        style={{ padding: '4px 8px', fontSize: '12px' }}
+                      >
+                        {t('city.assignCities')}
+                      </button>
+                    </div>
+                  </td>
+                )}
                 <td>{user.department || '-'}</td>
                 <td>
                   <span className={`status-badge ${user.is_active ? 'active' : 'inactive'}`}>
@@ -655,6 +734,68 @@ export default function UserManagement() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 城市权限编辑弹窗 */}
+      {showCityModal && cityEditUser && (
+        <div className="modal-overlay" onClick={() => setShowCityModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>{t('city.assignCities')} - {cityEditUser.username}</h2>
+            <div style={{ marginBottom: '20px', padding: '10px', background: '#f0f7ff', borderRadius: '6px' }}>
+              <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
+                {t('city.selectCities')}
+              </p>
+            </div>
+            <div style={{ display: 'grid', gap: '10px' }}>
+              {cityOptions.map(city => (
+                <label 
+                  key={city.code} 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    padding: '12px', 
+                    border: '2px solid', 
+                    borderColor: editCities.includes(city.code) ? '#667eea' : '#e0e0e0',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    background: editCities.includes(city.code) ? '#f0f7ff' : 'white',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <input 
+                    type="checkbox" 
+                    checked={editCities.includes(city.code)}
+                    onChange={() => toggleCitySelection(city.code)}
+                    style={{ marginRight: '10px', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: '16px', fontWeight: editCities.includes(city.code) ? '600' : '400' }}>
+                    {city.name} ({city.code})
+                  </span>
+                </label>
+              ))}
+            </div>
+            <div className="modal-buttons" style={{ marginTop: '20px' }}>
+              <button 
+                type="button" 
+                className="btn-submit"
+                onClick={handleSaveCities}
+                disabled={editCities.length === 0}
+              >
+                {t('common.save')}
+              </button>
+              <button 
+                type="button" 
+                className="btn-cancel-modal"
+                onClick={() => {
+                  setShowCityModal(false)
+                  setCityEditUser(null)
+                }}
+              >
+                {t('common.cancel')}
+              </button>
+            </div>
           </div>
         </div>
       )}

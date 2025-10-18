@@ -3,35 +3,41 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { addPackage, getPackagesByLocation, deletePackage } from '../services/dataService'
 import { useLanguage } from '../contexts/LanguageContext'
+import { useCity } from '../contexts/CityContext'
 import './ShelvingInput.css'
 
 function ShelvingInput() {
   const navigate = useNavigate()
   const { locationId } = useParams()
   const { t } = useLanguage()
+  const { currentCity } = useCity()
   const [packageNumber, setPackageNumber] = useState('')
   const [packages, setPackages] = useState([])
   const [notification, setNotification] = useState(null)
   const [isOnline, setIsOnline] = useState(true)
   const inputRef = useRef(null)
 
-  // 从 Supabase 加载已保存的包裹数据
+  // 从 Supabase 加载已保存的包裹数据（城市过滤）
   useEffect(() => {
-    loadPackages()
-  }, [locationId])
+    if (currentCity) {
+      loadPackages()
+    }
+  }, [locationId, currentCity])
 
-  // 🔄 实时数据同步
+  // 🔄 实时数据同步（城市过滤）
   useEffect(() => {
+    if (!currentCity) return
+
     // 创建实时订阅
     const subscription = supabase
-      .channel(`packages-location-${locationId}`)
+      .channel(`packages-location-${locationId}-${currentCity}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'packages',
-          filter: `location=eq.${locationId}`
+          filter: `location=eq.${locationId},city=eq.${currentCity}` // 添加城市过滤
         },
         (payload) => {
           console.log('📦 包裹数据变化：', payload)
@@ -72,11 +78,11 @@ function ShelvingInput() {
       console.log('🔌 取消订阅')
       subscription.unsubscribe()
     }
-  }, [locationId])
+  }, [locationId, currentCity])
 
   const loadPackages = async () => {
     try {
-      const locationPackages = await getPackagesByLocation(locationId)
+      const locationPackages = await getPackagesByLocation(locationId, currentCity) // 传入当前城市
       setPackages(locationPackages)
     } catch (error) {
       console.error('Error loading packages:', error)
@@ -103,10 +109,11 @@ function ShelvingInput() {
     }
 
     try {
-      // 创建新包裹记录并保存到 Supabase
+      // 创建新包裹记录并保存到 Supabase（传入当前城市）
       const newPackage = await addPackage({
         packageNumber: packageNumber.trim(),
-        location: locationId
+        location: locationId,
+        city: currentCity // 添加城市字段
       })
 
       // 更新当前显示的列表

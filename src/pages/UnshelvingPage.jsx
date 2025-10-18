@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { getAllPackages, updatePackage } from '../services/dataService'
 import { useLanguage } from '../contexts/LanguageContext'
+import { useCity } from '../contexts/CityContext'
 import './UnshelvingPage.css'
 
 function UnshelvingPage() {
   const navigate = useNavigate()
   const { t } = useLanguage()
+  const { currentCity } = useCity()
   const [packages, setPackages] = useState([])
   const [groupedPackages, setGroupedPackages] = useState({})
   const [searchInput, setSearchInput] = useState('')
@@ -20,21 +22,26 @@ function UnshelvingPage() {
   // 需要下架的状态：待下架
   const PENDING_REMOVAL_STATUS = 'pending-removal'
 
-  // 加载需要下架的包裹
+  // 加载需要下架的包裹（城市过滤）
   useEffect(() => {
-    loadPackages()
-  }, [])
+    if (currentCity) {
+      loadPackages()
+    }
+  }, [currentCity])
 
-  // 🔄 实时监听包裹变化
+  // 🔄 实时监听包裹变化（城市过滤）
   useEffect(() => {
+    if (!currentCity) return
+
     const subscription = supabase
-      .channel('packages-unshelving')
+      .channel(`packages-unshelving-${currentCity}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'packages'
+          table: 'packages',
+          filter: `city=eq.${currentCity}` // 只监听当前城市的包裹
         },
         async (payload) => {
           console.log('📦 包裹数据变化（下架页面）：', payload)
@@ -54,7 +61,7 @@ function UnshelvingPage() {
       })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [currentCity])
 
   // 🔄 当 packages 变化时，自动更新分组
   useEffect(() => {
@@ -68,7 +75,7 @@ function UnshelvingPage() {
 
   const loadPackages = async () => {
     try {
-      const allPackages = await getAllPackages()
+      const allPackages = await getAllPackages(currentCity) // 传入当前城市
       // 筛选需要下架的包裹：状态为待下架
       const unshelvingPackages = allPackages.filter(pkg => 
         (pkg.package_status || pkg.packageStatus) === PENDING_REMOVAL_STATUS

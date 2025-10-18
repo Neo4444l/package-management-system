@@ -29,14 +29,21 @@ function handleSupabaseError(error, operation) {
 // ==================== 包裹相关操作 ====================
 
 /**
- * 获取所有包裹
+ * 获取所有包裹（支持城市过滤）
+ * @param {string} city - 城市代码 (可选，如果不传则不过滤)
  */
-export async function getAllPackages() {
+export async function getAllPackages(city = null) {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('packages')
       .select('*')
-      .order('created_at', { ascending: false })
+    
+    // 如果传入城市参数，添加城市过滤
+    if (city) {
+      query = query.eq('city', city)
+    }
+    
+    const { data, error } = await query.order('created_at', { ascending: false })
     
     if (error) throw error
     return data || []
@@ -47,15 +54,23 @@ export async function getAllPackages() {
 }
 
 /**
- * 根据状态获取包裹
+ * 根据状态获取包裹（支持城市过滤）
+ * @param {string} status - 包裹状态
+ * @param {string} city - 城市代码 (可选)
  */
-export async function getPackagesByStatus(status) {
+export async function getPackagesByStatus(status, city = null) {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('packages')
       .select('*')
       .eq('package_status', status)
-      .order('created_at', { ascending: false })
+    
+    // 如果传入城市参数，添加城市过滤
+    if (city) {
+      query = query.eq('city', city)
+    }
+    
+    const { data, error } = await query.order('created_at', { ascending: false })
     
     if (error) throw error
     return data || []
@@ -66,15 +81,23 @@ export async function getPackagesByStatus(status) {
 }
 
 /**
- * 根据库位获取包裹
+ * 根据库位获取包裹（支持城市过滤）
+ * @param {string} location - 库位号
+ * @param {string} city - 城市代码 (可选)
  */
-export async function getPackagesByLocation(location) {
+export async function getPackagesByLocation(location, city = null) {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('packages')
       .select('*')
       .eq('location', location)
-      .order('created_at', { ascending: false })
+    
+    // 如果传入城市参数，添加城市过滤
+    if (city) {
+      query = query.eq('city', city)
+    }
+    
+    const { data, error } = await query.order('created_at', { ascending: false })
     
     if (error) throw error
     return data || []
@@ -85,7 +108,8 @@ export async function getPackagesByLocation(location) {
 }
 
 /**
- * 添加包裹
+ * 添加包裹（自动添加城市字段）
+ * @param {object} packageData - 包裹数据，需包含 city 字段
  */
 export async function addPackage(packageData) {
   try {
@@ -100,6 +124,7 @@ export async function addPackage(packageData) {
         location: packageData.location,
         package_status: packageData.packageStatus || 'in-warehouse',
         customer_service: packageData.customerService || null,
+        city: packageData.city || 'MIA', // 添加城市字段，默认 MIA
         shelving_time: now,
         status_history: packageData.statusHistory || [],
         last_modified_by: user?.id,
@@ -166,15 +191,23 @@ export async function deletePackage(id) {
 }
 
 /**
- * 搜索包裹
+ * 搜索包裹（支持城市过滤）
+ * @param {string} searchTerm - 搜索关键词
+ * @param {string} city - 城市代码 (可选)
  */
-export async function searchPackages(searchTerm) {
+export async function searchPackages(searchTerm, city = null) {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('packages')
       .select('*')
       .or(`package_number.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%`)
-      .order('created_at', { ascending: false })
+    
+    // 如果传入城市参数，添加城市过滤
+    if (city) {
+      query = query.eq('city', city)
+    }
+    
+    const { data, error } = await query.order('created_at', { ascending: false })
     
     if (error) throw error
     return data || []
@@ -185,14 +218,16 @@ export async function searchPackages(searchTerm) {
 }
 
 /**
- * 下架包裹
+ * 下架包裹（支持城市过滤，确保只能下架当前城市的包裹）
+ * @param {string} packageNumber - 包裹号
+ * @param {string} city - 城市代码 (可选，用于安全验证)
  */
-export async function unshelvingPackage(packageNumber) {
+export async function unshelvingPackage(packageNumber, city = null) {
   try {
     const { data: { user } } = await supabase.auth.getUser()
     const now = new Date().toISOString()
     
-    const { data, error } = await supabase
+    let query = supabase
       .from('packages')
       .update({
         package_status: 'removed',
@@ -201,7 +236,13 @@ export async function unshelvingPackage(packageNumber) {
         last_modified_at: now
       })
       .eq('package_number', packageNumber)
-      .select()
+    
+    // 如果传入城市参数，添加城市过滤（安全验证）
+    if (city) {
+      query = query.eq('city', city)
+    }
+    
+    const { data, error } = await query.select()
     
     if (error) throw error
     return data[0]
@@ -243,14 +284,21 @@ export async function batchUpdatePackages(packageIds, updates) {
 // ==================== 库位相关操作 ====================
 
 /**
- * 获取所有库位
+ * 获取所有库位（支持城市过滤）
+ * @param {string} city - 城市代码 (可选)
  */
-export async function getAllLocations() {
+export async function getAllLocations(city = null) {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('locations')
       .select('*')
-      .order('created_at', { ascending: true })
+    
+    // 如果传入城市参数，添加城市过滤
+    if (city) {
+      query = query.eq('city', city)
+    }
+    
+    const { data, error } = await query.order('created_at', { ascending: true })
     
     if (error) throw error
     return data || []
@@ -261,22 +309,25 @@ export async function getAllLocations() {
 }
 
 /**
- * 添加库位
+ * 添加库位（自动添加城市字段）
+ * @param {string} code - 库位号
+ * @param {string} city - 城市代码 (必填)
  */
-export async function addLocation(code) {
+export async function addLocation(code, city = 'MIA') {
   try {
     const { data, error } = await supabase
       .from('locations')
       .insert([{ 
         code,
+        city, // 添加城市字段
         created_at: new Date().toISOString()
       }])
       .select()
     
     if (error) {
-      // 检查是否是重复的库位号
+      // 检查是否是重复的库位号（同一城市内）
       if (error.code === '23505') {
-        throw new Error('库位号已存在')
+        throw new Error('该城市内库位号已存在')
       }
       throw error
     }
@@ -330,9 +381,10 @@ export async function batchDeleteLocations(locationIds) {
 // ==================== 数据迁移工具 ====================
 
 /**
- * 从LocalStorage迁移数据到Supabase
+ * 从LocalStorage迁移数据到Supabase（支持城市）
+ * @param {string} city - 迁移到的目标城市 (默认 MIA)
  */
-export async function migrateFromLocalStorage() {
+export async function migrateFromLocalStorage(city = 'MIA') {
   try {
     const results = {
       packages: { success: 0, failed: 0 },
@@ -345,10 +397,10 @@ export async function migrateFromLocalStorage() {
       const locations = JSON.parse(locationsStr)
       for (const loc of locations) {
         try {
-          await addLocation(loc.code)
+          await addLocation(loc.code, city) // 传入城市参数
           results.locations.success++
         } catch (error) {
-          if (error.message === '库位号已存在') {
+          if (error.message === '该城市内库位号已存在') {
             results.locations.success++
           } else {
             results.locations.failed++
@@ -368,7 +420,8 @@ export async function migrateFromLocalStorage() {
             location: pkg.location,
             packageStatus: pkg.packageStatus,
             customerService: pkg.customerService,
-            statusHistory: pkg.statusHistory || []
+            statusHistory: pkg.statusHistory || [],
+            city: city // 添加城市字段
           })
           results.packages.success++
         } catch (error) {

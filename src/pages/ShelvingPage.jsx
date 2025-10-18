@@ -3,27 +3,31 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { getAllLocations, getAllPackages } from '../services/dataService'
 import { useLanguage } from '../contexts/LanguageContext'
+import { useCity } from '../contexts/CityContext'
 import './ShelvingPage.css'
 
 function ShelvingPage() {
   const navigate = useNavigate()
   const { t } = useLanguage()
+  const { currentCity } = useCity()
   const [selectedLocation, setSelectedLocation] = useState('')
   const [locations, setLocations] = useState([])
   const [isOnline, setIsOnline] = useState(true)
   const [packageCounts, setPackageCounts] = useState({})  // 每个库位的包裹数量
   const [loading, setLoading] = useState(true)  // 添加加载状态
 
-  // 从 Supabase 加载库位选项
+  // 从 Supabase 加载库位选项（城市过滤）
   useEffect(() => {
-    loadLocations()
-    loadPackageCounts()  // 加载包裹数量
-  }, [])
+    if (currentCity) {
+      loadLocations()
+      loadPackageCounts()  // 加载包裹数量
+    }
+  }, [currentCity])
 
   const loadLocations = async () => {
     try {
       setLoading(true)
-      const allLocations = await getAllLocations()
+      const allLocations = await getAllLocations(currentCity) // 传入当前城市
       setLocations(allLocations)
     } catch (error) {
       console.error('Error loading locations:', error)
@@ -34,7 +38,7 @@ function ShelvingPage() {
 
   const loadPackageCounts = async () => {
     try {
-      const allPackages = await getAllPackages()
+      const allPackages = await getAllPackages(currentCity) // 传入当前城市
       // 统计每个库位的包裹数量（只统计"在库内"和"待下架"的包裹）
       const counts = {}
       allPackages.forEach(pkg => {
@@ -52,16 +56,19 @@ function ShelvingPage() {
     }
   }
 
-  // 🔄 实时监听库位变化
+  // 🔄 实时监听库位变化（城市过滤）
   useEffect(() => {
+    if (!currentCity) return
+
     const locationSubscription = supabase
-      .channel('locations-shelving-page')
+      .channel(`locations-shelving-page-${currentCity}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'locations'
+          table: 'locations',
+          filter: `city=eq.${currentCity}` // 只监听当前城市的库位
         },
         (payload) => {
           console.log('📍 库位数据变化：', payload)
@@ -85,18 +92,21 @@ function ShelvingPage() {
       })
 
     return () => locationSubscription.unsubscribe()
-  }, [selectedLocation])
+  }, [selectedLocation, currentCity])
 
-  // 🔄 实时监听包裹变化，更新数量统计
+  // 🔄 实时监听包裹变化，更新数量统计（城市过滤）
   useEffect(() => {
+    if (!currentCity) return
+
     const packageSubscription = supabase
-      .channel('packages-shelving-counts')
+      .channel(`packages-shelving-counts-${currentCity}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'packages'
+          table: 'packages',
+          filter: `city=eq.${currentCity}` // 只监听当前城市的包裹
         },
         (payload) => {
           console.log('📦 包裹数据变化（库位统计）：', payload)
@@ -107,7 +117,7 @@ function ShelvingPage() {
       .subscribe()
 
     return () => packageSubscription.unsubscribe()
-  }, [])
+  }, [currentCity])
 
   const handleLocationSelect = (location) => {
     setSelectedLocation(location)

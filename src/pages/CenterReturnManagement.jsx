@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { getAllPackages, updatePackage, deletePackage } from '../services/dataService'
 import { useLanguage } from '../contexts/LanguageContext'
+import { useCity } from '../contexts/CityContext'
 import './CenterReturnManagement.css'
 
 function CenterReturnManagement() {
   const navigate = useNavigate()
   const { t } = useLanguage()
+  const { currentCity } = useCity()
   const [packages, setPackages] = useState([])
   const [filteredPackages, setFilteredPackages] = useState([])
   const [activeTab, setActiveTab] = useState('all')
@@ -32,22 +34,27 @@ function CenterReturnManagement() {
   const [locationFilter, setLocationFilter] = useState('')  // 库位筛选
   const [availableLocations, setAvailableLocations] = useState([])  // 可用库位列表
 
-  // 从 Supabase 加载包裹数据
+  // 从 Supabase 加载包裹数据（城市过滤）
   useEffect(() => {
-    loadPackages()
-    loadUserRole()
-  }, [])
+    if (currentCity) {
+      loadPackages()
+      loadUserRole()
+    }
+  }, [currentCity])
 
-  // 🔄 实时监听包裹变化
+  // 🔄 实时监听包裹变化（城市过滤）
   useEffect(() => {
+    if (!currentCity) return
+
     const subscription = supabase
-      .channel('packages-center-return')
+      .channel(`packages-center-return-${currentCity}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'packages'
+          table: 'packages',
+          filter: `city=eq.${currentCity}` // 只监听当前城市的包裹
         },
         async (payload) => {
           console.log('📦 包裹数据变化（中心退回管理）：', payload)
@@ -68,7 +75,7 @@ function CenterReturnManagement() {
       })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [currentCity])
 
   const loadUserRole = async () => {
     try {
@@ -91,10 +98,11 @@ function CenterReturnManagement() {
 
   const loadPackages = async () => {
     try {
-      // 先获取所有包裹
+      // 先获取所有包裹（城市过滤）
       const { data: allPackages, error: packagesError } = await supabase
         .from('packages')
         .select('*')
+        .eq('city', currentCity) // 添加城市过滤
         .order('created_at', { ascending: false })
 
       if (packagesError) throw packagesError
