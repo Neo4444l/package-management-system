@@ -500,8 +500,7 @@ export default function UserManagement() {
                     <button
                       onClick={() => handleEditUser(user)}
                       className="btn-edit"
-                      disabled={user.id === currentUserId}
-                      title={user.id === currentUserId ? '不能编辑自己' : '编辑用户名'}
+                      title="编辑用户名"
                     >
                       ✏️
                     </button>

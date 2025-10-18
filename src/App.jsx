@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import Login from './components/Login'
+import ResetPassword from './components/ResetPassword'
 import UserManagement from './components/UserManagement'
 import HomePage from './pages/HomePage'
 import ShelvingPage from './pages/ShelvingPage'
@@ -89,44 +90,52 @@ function App() {
     )
   }
 
-  if (!session) {
-    return <Login onLogin={setSession} />
-  }
-
-  const roleBadge = getRoleBadge(userRole)
-
   return (
     <Router>
-      <div className="App">
-        <div className="user-info">
-          <span className="user-email">👤 {session.user.email}</span>
-          {userRole && (
-            <span className={`user-role-badge ${roleBadge.class}`}>
-              {roleBadge.text}
-            </span>
-          )}
-          {userRole === 'admin' && (
-            <a href="/user-management" className="btn-manage-users">
-              👥 用户管理
-            </a>
-          )}
-          <button onClick={handleLogout} className="btn-logout">
-            退出登录
-          </button>
-        </div>
+      <Routes>
+        {/* 公开路由 - 密码重置 */}
+        <Route path="/reset-password" element={<ResetPassword />} />
         
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/shelving" element={<ShelvingPage />} />
-          <Route path="/shelving/:locationId" element={<ShelvingInput />} />
-          <Route path="/unshelving" element={<UnshelvingPage />} />
-          <Route path="/return-dashboard" element={<ReturnDashboard />} />
-          <Route path="/return-dashboard/location-management" element={<LocationManagement />} />
-          <Route path="/return-dashboard/center-return" element={<CenterReturnManagement />} />
-            <Route path="/user-management" element={<UserManagement />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
+        {/* 需要登录的路由 */}
+        {!session ? (
+          <Route path="*" element={<Login onLogin={setSession} />} />
+        ) : (
+          <>
+            <Route path="*" element={
+              <div className="App">
+                <div className="user-info">
+                  <span className="user-email">👤 {session.user.email}</span>
+                  {userRole && (
+                    <span className={`user-role-badge ${getRoleBadge(userRole).class}`}>
+                      {getRoleBadge(userRole).text}
+                    </span>
+                  )}
+                  {userRole === 'admin' && (
+                    <a href="/user-management" className="btn-manage-users">
+                      👥 用户管理
+                    </a>
+                  )}
+                  <button onClick={handleLogout} className="btn-logout">
+                    退出登录
+                  </button>
+                </div>
+                
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/shelving" element={<ShelvingPage />} />
+                  <Route path="/shelving/:locationId" element={<ShelvingInput />} />
+                  <Route path="/unshelving" element={<UnshelvingPage />} />
+                  <Route path="/return-dashboard" element={<ReturnDashboard />} />
+                  <Route path="/return-dashboard/location-management" element={<LocationManagement />} />
+                  <Route path="/return-dashboard/center-return" element={<CenterReturnManagement />} />
+                  <Route path="/user-management" element={<UserManagement />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </div>
+            } />
+          </>
+        )}
+      </Routes>
     </Router>
   )
 }

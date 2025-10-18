@@ -4,11 +4,10 @@ import './Login.css'
 
 export default function Login({ onLogin }) {
   const [loading, setLoading] = useState(false)
-  const [showChangePassword, setShowChangePassword] = useState(false)
+  const [showResetPassword, setShowResetPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
+  const [resetEmail, setResetEmail] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -36,108 +35,56 @@ export default function Login({ onLogin }) {
     }
   }
 
-  const handleChangePassword = async (e) => {
+  const handleResetPassword = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError('')
     setSuccess('')
 
     try {
-      // 验证新密码
-      if (newPassword.length < 6) {
-        throw new Error('新密码至少需要6个字符')
-      }
-
-      if (newPassword !== confirmPassword) {
-        throw new Error('两次输入的新密码不一致')
-      }
-
-      // 先登录验证旧密码
-      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // 发送密码重置邮件
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
       })
 
-      if (loginError) throw new Error('当前密码错误')
+      if (error) throw error
 
-      // 更新密码
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: newPassword
-      })
-
-      if (updateError) throw updateError
-
-      setSuccess('密码修改成功！')
+      setSuccess('✅ 密码重置邮件已发送！请检查您的邮箱（包括垃圾邮件文件夹）。')
       
       // 清空表单
-      setEmail('')
-      setPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
+      setResetEmail('')
       
-      // 2秒后返回登录界面
+      // 5秒后返回登录界面
       setTimeout(() => {
-        setShowChangePassword(false)
+        setShowResetPassword(false)
         setSuccess('')
-      }, 2000)
+      }, 5000)
     } catch (error) {
-      setError(error.message)
+      setError(error.message || '发送失败，请稍后重试')
     } finally {
       setLoading(false)
     }
   }
 
-  if (showChangePassword) {
+  if (showResetPassword) {
     return (
       <div className="login-container">
         <div className="login-box">
           <h1>📦 退回包裹管理系统</h1>
-          <h2>修改密码</h2>
+          <h2>忘记/修改密码</h2>
+          <p className="reset-description">
+            输入您的邮箱地址，我们将发送密码重置链接到您的邮箱
+          </p>
           
-          <form onSubmit={handleChangePassword}>
+          <form onSubmit={handleResetPassword}>
             <div className="form-group">
               <label>邮箱</label>
               <input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="请输入邮箱"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                placeholder="请输入您的注册邮箱"
                 required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>当前密码</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="请输入当前密码"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>新密码</label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="请输入新密码（至少6位）"
-                required
-                minLength={6}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>确认新密码</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="请再次输入新密码"
-                required
-                minLength={6}
               />
             </div>
 
@@ -145,20 +92,17 @@ export default function Login({ onLogin }) {
             {success && <div className="success-message">{success}</div>}
 
             <button type="submit" disabled={loading} className="btn-primary">
-              {loading ? '处理中...' : '确认修改'}
+              {loading ? '发送中...' : '发送重置邮件'}
             </button>
           </form>
 
           <div className="toggle-mode">
             <p>
               <button onClick={() => {
-                setShowChangePassword(false)
+                setShowResetPassword(false)
                 setError('')
                 setSuccess('')
-                setEmail('')
-                setPassword('')
-                setNewPassword('')
-                setConfirmPassword('')
+                setResetEmail('')
               }}>
                 返回登录
               </button>
@@ -208,10 +152,10 @@ export default function Login({ onLogin }) {
         <div className="toggle-mode">
           <p>
             <button onClick={() => {
-              setShowChangePassword(true)
+              setShowResetPassword(true)
               setError('')
             }}>
-              修改密码
+              忘记/修改密码
             </button>
           </p>
           <p className="admin-note">
