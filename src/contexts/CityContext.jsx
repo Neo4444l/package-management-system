@@ -44,6 +44,7 @@ export const CityProvider = ({ children }) => {
 
   const loadUserCities = async () => {
     try {
+      setLoading(true)
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
@@ -51,36 +52,68 @@ export const CityProvider = ({ children }) => {
         return
       }
 
-      const { data: profile, error } = await supabase
+      // 添加超时保护（5秒）
+      const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('查询超时')), 5000)
+      )
+
+      const queryPromise = supabase
         .from('profiles')
         .select('cities, current_city, role')
         .eq('id', user.id)
         .single()
 
+      const { data: profile, error } = await Promise.race([queryPromise, timeout])
+
       if (error) throw error
 
       const cities = profile.cities || []
-      setUserCities(cities)
       setUserRole(profile.role)
 
-      // 如果是 super_admin，拥有所有城市权限
+      // 根据角色设置可访问的城市列表
+      let accessibleCities = cities
       if (profile.role === 'super_admin') {
-        setUserCities(AVAILABLE_CITIES.map(c => c.code))
+        accessibleCities = AVAILABLE_CITIES.map(c => c.code)
       }
+      setUserCities(accessibleCities)
 
-      // 设置当前城市
+      // 设置当前城市（修复逻辑）
       const savedCity = localStorage.getItem('currentCity')
-      if (savedCity && cities.includes(savedCity)) {
+      
+      // 验证并设置城市
+      if (savedCity && accessibleCities.includes(savedCity)) {
+        // localStorage 中的城市有效
         setCurrentCity(savedCity)
-      } else if (profile.current_city && cities.includes(profile.current_city)) {
+      } else if (profile.current_city && accessibleCities.includes(profile.current_city)) {
+        // 使用数据库中的城市
         setCurrentCity(profile.current_city)
         localStorage.setItem('currentCity', profile.current_city)
-      } else if (cities.length > 0) {
-        setCurrentCity(cities[0])
-        localStorage.setItem('currentCity', cities[0])
+      } else if (accessibleCities.length > 0) {
+        // 使用第一个可访问的城市
+        const defaultCity = accessibleCities[0]
+        setCurrentCity(defaultCity)
+        localStorage.setItem('currentCity', defaultCity)
+        
+        // 同步到数据库
+        await supabase
+          .from('profiles')
+          .update({ current_city: defaultCity })
+          .eq('id', user.id)
+      } else {
+        // 没有任何城市权限，默认 MIA
+        console.warn('用户没有任何城市权限，使用默认城市 MIA')
+        setCurrentCity('MIA')
+        setUserCities(['MIA'])
+        localStorage.setItem('currentCity', 'MIA')
       }
     } catch (error) {
       console.error('加载用户城市权限失败:', error)
+      
+      // 错误时使用安全的默认值
+      setCurrentCity('MIA')
+      setUserCities(['MIA'])
+      setUserRole(null)
+      localStorage.setItem('currentCity', 'MIA')
     } finally {
       setLoading(false)
     }
@@ -89,27 +122,43 @@ export const CityProvider = ({ children }) => {
   const changeCity = async (cityCode) => {
     // 检查用户是否有该城市的权限
     if (!userCities.includes(cityCode) && userRole !== 'super_admin') {
-      console.error('无权访问该城市')
+      console.error('无权访问该城市:', cityCode)
+      alert('您没有权限访问该城市')
       return false
     }
 
+    const previousCity = currentCity // 保存之前的城市，用于回退
+    
     try {
-      // 保存到数据库
+      // 先更新本地状态（乐观更新）
+      setCurrentCity(cityCode)
+      localStorage.setItem('currentCity', cityCode)
+
+      // 保存到数据库（带超时保护）
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        await supabase
+        const timeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('更新超时')), 3000)
+        )
+
+        const updatePromise = supabase
           .from('profiles')
           .update({ current_city: cityCode })
           .eq('id', user.id)
-      }
 
-      // 更新本地状态
-      setCurrentCity(cityCode)
-      localStorage.setItem('currentCity', cityCode)
+        await Promise.race([updatePromise, timeout])
+      }
       
+      console.log(`✅ 城市切换成功: ${previousCity} → ${cityCode}`)
       return true
     } catch (error) {
       console.error('切换城市失败:', error)
+      
+      // 回退到之前的城市
+      setCurrentCity(previousCity)
+      localStorage.setItem('currentCity', previousCity)
+      
+      alert('切换城市失败，请检查网络连接')
       return false
     }
   }

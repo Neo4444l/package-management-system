@@ -8,7 +8,8 @@ import './UserManagement.css'
 export default function UserManagement() {
   const navigate = useNavigate()
   const { t } = useLanguage()
-  const { cityOptions, isSuperAdmin } = useCity()
+  const { availableCities, isSuperAdmin } = useCity()
+  const cityOptions = availableCities // 使用 availableCities 别名
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [currentUserId, setCurrentUserId] = useState(null)
@@ -354,7 +355,7 @@ export default function UserManagement() {
     if (!cities || cities.length === 0) return t('city.noCityAccess')
     return cities.map(code => {
       const city = cityOptions.find(c => c.code === code)
-      return city ? city.name : code
+      return city ? city.nameZh : code // 使用中文名称
     }).join(', ')
   }
   
@@ -771,7 +772,7 @@ export default function UserManagement() {
                     style={{ marginRight: '10px', cursor: 'pointer' }}
                   />
                   <span style={{ fontSize: '16px', fontWeight: editCities.includes(city.code) ? '600' : '400' }}>
-                    {city.name} ({city.code})
+                    {city.nameZh} ({city.code})
                   </span>
                 </label>
               ))}
