@@ -1,33 +1,35 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useLanguage } from '../contexts/LanguageContext'
 import './HomePage.css'
 import packageInfo from '../../package.json'
 
 function HomePage() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const version = packageInfo.version
 
   const modules = [
     {
       id: 'shelving',
-      title: '上架',
-      description: '选择库位并录入包裹信息',
+      title: t('home.shelving'),
+      description: t('home.shelvingDesc'),
       icon: '📦',
       color: '#4CAF50',
       path: '/shelving'
     },
     {
       id: 'unshelving',
-      title: '下架',
-      description: '包裹下架管理',
+      title: t('home.unshelving'),
+      description: t('home.unshelvingDesc'),
       icon: '📤',
       color: '#2196F3',
       path: '/unshelving'
     },
     {
       id: 'return',
-      title: '退件看板',
-      description: '库位管理与中心退回管理',
+      title: t('home.returnDashboard'),
+      description: t('home.returnDashboardDesc'),
       icon: '↩️',
       color: '#FF9800',
       path: '/return-dashboard'
@@ -38,7 +40,7 @@ function HomePage() {
     <div className="home-page">
       <div className="home-container">
         <header className="home-header">
-          <h1 className="home-title">退回包裹管理系统</h1>
+          <h1 className="home-title">{t('app.title')}</h1>
           <p className="home-subtitle">Return Package Management System</p>
         </header>
 
@@ -53,13 +55,13 @@ function HomePage() {
               <div className="module-icon">{module.icon}</div>
               <h2 className="module-title">{module.title}</h2>
               <p className="module-description">{module.description}</p>
-              {module.disabled && <span className="coming-soon">即将推出</span>}
+              {module.disabled && <span className="coming-soon">Coming Soon</span>}
             </div>
           ))}
         </div>
 
         <footer className="home-footer">
-          <p>&copy; 2025 退回包裹管理系统_版本{version}. All rights reserved.</p>
+          <p>&copy; 2025 {t('app.title')} v{version}. All rights reserved.</p>
         </footer>
       </div>
     </div>

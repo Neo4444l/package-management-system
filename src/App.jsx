@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
+import { useLanguage } from './contexts/LanguageContext'
 import Login from './components/Login'
 import ResetPassword from './components/ResetPassword'
 import UserManagement from './components/UserManagement'
@@ -14,6 +15,7 @@ import CenterReturnManagement from './pages/CenterReturnManagement'
 import './App.css'
 
 function App() {
+  const { t } = useLanguage()
   const [session, setSession] = useState(null)
   const [userRole, setUserRole] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -64,9 +66,9 @@ function App() {
 
   const getRoleBadge = (role) => {
     const badges = {
-      admin: { text: '管理员', class: 'role-admin' },
-      manager: { text: '经理', class: 'role-manager' },
-      user: { text: '用户', class: 'role-user' }
+      admin: { text: t('roles.admin'), class: 'role-admin' },
+      manager: { text: t('roles.manager'), class: 'role-manager' },
+      user: { text: t('roles.user'), class: 'role-user' }
     }
     return badges[role] || badges.user
   }
@@ -85,7 +87,7 @@ function App() {
         fontSize: '18px',
         color: '#667eea'
       }}>
-        加载中...
+        {t('common.loading')}
       </div>
     )
   }
@@ -112,11 +114,11 @@ function App() {
                   )}
                   {userRole === 'admin' && (
                     <a href="/user-management" className="btn-manage-users">
-                      👥 用户管理
+                      👥 {t('userManagement.title')}
                     </a>
                   )}
                   <button onClick={handleLogout} className="btn-logout">
-                    退出登录
+                    {t('auth.logout')}
                   </button>
                 </div>
                 

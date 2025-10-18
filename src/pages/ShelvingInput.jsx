@@ -2,11 +2,13 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { addPackage, getPackagesByLocation, deletePackage } from '../services/dataService'
+import { useLanguage } from '../contexts/LanguageContext'
 import './ShelvingInput.css'
 
 function ShelvingInput() {
   const navigate = useNavigate()
   const { locationId } = useParams()
+  const { t } = useLanguage()
   const [packageNumber, setPackageNumber] = useState('')
   const [packages, setPackages] = useState([])
   const [notification, setNotification] = useState(null)
@@ -43,11 +45,11 @@ function ShelvingInput() {
               }
               return [payload.new, ...prev]
             })
-            showNotification(`📦 新包裹上架：${payload.new.package_number}`, 'info')
+            showNotification(`📦 ${t('shelving.newPackageShelved')}: ${payload.new.package_number}`, 'info')
           } else if (payload.eventType === 'DELETE') {
             // 其他用户删除了包裹
             setPackages(prev => prev.filter(p => p.id !== payload.old.id))
-            showNotification(`🗑️ 包裹已被删除`, 'info')
+            showNotification(`🗑️ ${t('shelving.packageDeleted')}`, 'info')
           } else if (payload.eventType === 'UPDATE') {
             // 包裹信息被更新
             setPackages(prev => prev.map(p => 
@@ -78,7 +80,7 @@ function ShelvingInput() {
       setPackages(locationPackages)
     } catch (error) {
       console.error('Error loading packages:', error)
-      showNotification('加载包裹数据失败', 'error')
+      showNotification(t('messages.loadingFailed'), 'error')
     }
   }
 
@@ -96,7 +98,7 @@ function ShelvingInput() {
     e.preventDefault()
     
     if (!packageNumber.trim()) {
-      showNotification('请输入包裹号', 'error')
+      showNotification(t('shelving.enterPackageNumber'), 'error')
       return
     }
 
@@ -112,40 +114,40 @@ function ShelvingInput() {
       
       // 清空输入框并显示通知
       setPackageNumber('')
-      showNotification(`包裹 ${newPackage.package_number} 已成功上架到云端`, 'success')
+      showNotification(`${t('shelving.package')} ${newPackage.package_number} ${t('shelving.shelvingSuccess')}`, 'success')
       
       // 重新聚焦输入框
       inputRef.current?.focus()
     } catch (error) {
       console.error('Error adding package:', error)
-      showNotification('上架失败：' + error.message, 'error')
+      showNotification(t('shelving.shelvingFailed') + ': ' + error.message, 'error')
     }
   }
 
   const handleDelete = async (id) => {
-    if (window.confirm('确定要删除这条记录吗？')) {
+    if (window.confirm(t('shelving.confirmDelete'))) {
       try {
         // 从 Supabase 删除
         await deletePackage(id)
 
         // 更新当前显示的列表
         setPackages(packages.filter(pkg => pkg.id !== id))
-        showNotification('记录已从云端删除', 'success')
+        showNotification(t('shelving.deleteSuccess'), 'success')
       } catch (error) {
         console.error('Error deleting package:', error)
-        showNotification('删除失败：' + error.message, 'error')
+        showNotification(t('messages.deleteFailed') + ': ' + error.message, 'error')
       }
     }
   }
 
   const handleExport = () => {
     if (packages.length === 0) {
-      showNotification('暂无数据可导出', 'error')
+      showNotification(t('shelving.noDataToExport'), 'error')
       return
     }
 
     // 导出为 CSV
-    const headers = ['包裹号', '库位', '上架时间']
+    const headers = [t('shelving.packageNumber'), t('shelving.locationLabel'), t('shelving.shelvingTime')]
     const rows = packages.map(pkg => [
       pkg.package_number || pkg.packageNumber,
       pkg.location,
@@ -161,13 +163,13 @@ function ShelvingInput() {
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
     link.setAttribute('href', url)
-    link.setAttribute('download', `上架记录_${locationId}_${Date.now()}.csv`)
+    link.setAttribute('download', `${t('shelving.shelvingRecords')}_${locationId}_${Date.now()}.csv`)
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
 
-    showNotification('数据已导出', 'success')
+    showNotification(t('shelving.exportSuccess'), 'success')
   }
 
   return (
@@ -175,7 +177,7 @@ function ShelvingInput() {
       {/* 离线指示器 */}
       {!isOnline && (
         <div className="offline-indicator">
-          ⚠️ 连接已断开，正在重连...
+          ⚠️ {t('messages.reconnecting')}
         </div>
       )}
 
@@ -187,31 +189,31 @@ function ShelvingInput() {
 
       <div className="shelving-input-container">
         <button className="back-button" onClick={() => navigate('/shelving')}>
-          ← 返回选择库位
+          ← {t('shelving.backToLocationSelect')}
         </button>
 
         <div className="input-header">
           <div className="header-icon">📦</div>
-          <h1>包裹上架</h1>
-          <div className="location-badge">库位: {locationId}</div>
+          <h1>{t('shelving.packageShelving')}</h1>
+          <div className="location-badge">{t('shelving.locationLabel')}: {locationId}</div>
         </div>
 
         <form className="package-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="package-number">包裹号：</label>
+            <label htmlFor="package-number">{t('shelving.packageNumber')}:</label>
             <div className="input-with-button">
               <input
                 ref={inputRef}
                 id="package-number"
                 type="text"
                 className="package-input"
-                placeholder="请输入包裹号"
+                placeholder={t('shelving.enterPackageNumber')}
                 value={packageNumber}
                 onChange={(e) => setPackageNumber(e.target.value)}
                 autoComplete="off"
               />
               <button type="submit" className="submit-button">
-                添加 ✓
+                {t('shelving.add')} ✓
               </button>
             </div>
           </div>
@@ -219,21 +221,21 @@ function ShelvingInput() {
 
         <div className="packages-section">
           <div className="section-header">
-            <h2>已上架包裹 ({packages.length})</h2>
+            <h2>{t('shelving.shelvedPackages')} ({packages.length})</h2>
             <button 
               className="export-button"
               onClick={handleExport}
               disabled={packages.length === 0}
             >
-              导出数据 📊
+              {t('common.export')} 📊
             </button>
           </div>
 
           {packages.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">📭</div>
-              <p>暂无包裹记录</p>
-              <p className="empty-hint">请在上方输入框中添加包裹号</p>
+              <p>{t('shelving.noPackageRecords')}</p>
+              <p className="empty-hint">{t('shelving.addPackageHint')}</p>
             </div>
           ) : (
             <div className="packages-list">
@@ -246,7 +248,7 @@ function ShelvingInput() {
                   <button 
                     className="delete-button"
                     onClick={() => handleDelete(pkg.id)}
-                    title="删除记录"
+                    title={t('common.delete')}
                   >
                     🗑️
                   </button>

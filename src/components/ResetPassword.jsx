@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
+import { useLanguage } from '../contexts/LanguageContext'
 import './Login.css'
 
 export default function ResetPassword() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -16,11 +18,11 @@ export default function ResetPassword() {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
-        setError('无效的重置链接或链接已过期。请重新申请密码重置。')
+        setError(t('auth.invalidResetLink'))
       }
     }
     checkSession()
-  }, [])
+  }, [t])
 
   const handleResetPassword = async (e) => {
     e.preventDefault()
@@ -31,11 +33,11 @@ export default function ResetPassword() {
     try {
       // 验证新密码
       if (newPassword.length < 6) {
-        throw new Error('新密码至少需要6个字符')
+        throw new Error(t('auth.passwordTooShort'))
       }
 
       if (newPassword !== confirmPassword) {
-        throw new Error('两次输入的新密码不一致')
+        throw new Error(t('auth.passwordMismatch'))
       }
 
       // 更新密码
@@ -45,14 +47,14 @@ export default function ResetPassword() {
 
       if (error) throw error
 
-      setSuccess('✅ 密码重置成功！3秒后跳转到登录页面...')
+      setSuccess(t('auth.passwordResetSuccess'))
       
       // 3秒后跳转到登录页面
       setTimeout(() => {
         navigate('/')
       }, 3000)
     } catch (error) {
-      setError(error.message || '密码重置失败，请重试')
+      setError(error.message || t('messages.operationFailed'))
     } finally {
       setLoading(false)
     }
@@ -61,20 +63,20 @@ export default function ResetPassword() {
   return (
     <div className="login-container">
       <div className="login-box">
-        <h1>📦 退回包裹管理系统</h1>
-        <h2>设置新密码</h2>
+        <h1>📦 {t('app.title')}</h1>
+        <h2>{t('auth.setNewPassword')}</h2>
         <p className="reset-description">
-          请输入您的新密码
+          {t('auth.resetDescription')}
         </p>
         
         <form onSubmit={handleResetPassword}>
           <div className="form-group">
-            <label>新密码</label>
+            <label>{t('auth.newPassword')}</label>
             <input
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="请输入新密码（至少6位）"
+              placeholder={t('auth.enterNewPassword')}
               required
               minLength={6}
               disabled={!!error && !loading}
@@ -82,12 +84,12 @@ export default function ResetPassword() {
           </div>
 
           <div className="form-group">
-            <label>确认新密码</label>
+            <label>{t('auth.confirmPassword')}</label>
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="请再次输入新密码"
+              placeholder={t('auth.enterConfirmPassword')}
               required
               minLength={6}
               disabled={!!error && !loading}
@@ -102,14 +104,14 @@ export default function ResetPassword() {
             disabled={loading || (!!error && !loading) || success} 
             className="btn-primary"
           >
-            {loading ? '处理中...' : success ? '重置成功' : '确认重置'}
+            {loading ? t('auth.processing') : success ? t('common.success') : t('common.confirm')}
           </button>
         </form>
 
         <div className="toggle-mode">
           <p>
             <button onClick={() => navigate('/')}>
-              返回登录
+              {t('auth.returnToLogin')}
             </button>
           </p>
         </div>

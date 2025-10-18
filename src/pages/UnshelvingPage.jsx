@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { getAllPackages, updatePackage } from '../services/dataService'
+import { useLanguage } from '../contexts/LanguageContext'
 import './UnshelvingPage.css'
 
 function UnshelvingPage() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const [packages, setPackages] = useState([])
   const [groupedPackages, setGroupedPackages] = useState({})
   const [searchInput, setSearchInput] = useState('')
@@ -75,7 +77,7 @@ function UnshelvingPage() {
       updateGroupedPackages(unshelvingPackages)
     } catch (error) {
       console.error('Error loading packages:', error)
-      showNotification('加载包裹数据失败', 'error')
+      showNotification(t('messages.loadingFailed'), 'error')
     }
   }
 
@@ -83,7 +85,7 @@ function UnshelvingPage() {
     // 按库位分组
     const grouped = {}
     pkgs.forEach(pkg => {
-      const location = pkg.location || '未知库位'
+      const location = pkg.location || t('unshelving.unknownLocation')
       if (!grouped[location]) {
         grouped[location] = []
       }
@@ -106,11 +108,11 @@ function UnshelvingPage() {
 
   const getInstructionLabel = (instruction) => {
     const instructionMap = {
-      're-dispatch': '重派',
-      're-dispatch-new-label': '重派（新面单）',
-      'return-to-customer': '退回客户'
+      're-dispatch': t('customerService.re-dispatch'),
+      're-dispatch-new-label': t('customerService.re-dispatch-new-label'),
+      'return-to-customer': t('customerService.return-to-customer')
     }
-    return instructionMap[instruction] || '无指令'
+    return instructionMap[instruction] || t('customerService.none')
   }
 
   const getInstructionColor = (instruction) => {
@@ -126,7 +128,7 @@ function UnshelvingPage() {
     e.preventDefault()
     
     if (!searchInput.trim()) {
-      showNotification('请输入运单号', 'error')
+      showNotification(t('unshelving.enterPackageNumber'), 'error')
       return
     }
 
@@ -148,7 +150,7 @@ function UnshelvingPage() {
         setMatchedPackage(matched)
         playSound()
         const packageNum = matched.package_number || matched.packageNumber
-        showNotification(`✅ 下架成功！运单 ${packageNum}`, 'success')
+        showNotification(`✅ ${t('unshelving.unshelvingSuccess')} ${packageNum}`, 'success')
         
         // 清空输入框，等待下次输入
         setSearchInput('')
@@ -156,12 +158,12 @@ function UnshelvingPage() {
         inputRef.current?.focus()
       } catch (error) {
         console.error('Error unshelving package:', error)
-        showNotification('下架失败：' + error.message, 'error')
+        showNotification(t('unshelving.unshelvingFailed') + ': ' + error.message, 'error')
       }
     } else {
       // 未找到匹配，清空输入
       setSearchInput('')
-      showNotification('未找到匹配的运单号', 'error')
+      showNotification(t('unshelving.packageNotFound'), 'error')
       inputRef.current?.focus()
     }
   }
@@ -177,7 +179,7 @@ function UnshelvingPage() {
       {/* 离线指示器 */}
       {!isOnline && (
         <div className="offline-indicator">
-          ⚠️ 连接已断开，正在重连...
+          ⚠️ {t('messages.reconnecting')}
         </div>
       )}
 
@@ -192,23 +194,23 @@ function UnshelvingPage() {
 
       <div className="unshelving-container">
         <button className="back-button" onClick={() => navigate('/')}>
-          ← 返回首页
+          ← {t('common.back')}
         </button>
 
         <div className="unshelving-header">
           <div className="header-icon">📤</div>
-          <h1>下架管理</h1>
-          <p>扫描或输入运单号进行下架</p>
+          <h1>{t('unshelving.title')}</h1>
+          <p>{t('unshelving.subtitle')}</p>
         </div>
 
         <div className="stats-bar">
           <div className="stat-item">
             <div className="stat-value">{packages.length}</div>
-            <div className="stat-label">待下架运单</div>
+            <div className="stat-label">{t('unshelving.pendingRemoval')}</div>
           </div>
           <div className="stat-item">
             <div className="stat-value">{Object.keys(groupedPackages).length}</div>
-            <div className="stat-label">涉及库位</div>
+            <div className="stat-label">{t('unshelving.locationsInvolved')}</div>
           </div>
         </div>
 
@@ -218,13 +220,13 @@ function UnshelvingPage() {
               ref={inputRef}
               type="text"
               className="search-input-large"
-              placeholder="请输入或扫描运单号..."
+              placeholder={t('unshelving.enterPackageNumber')}
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               autoComplete="off"
             />
             <button type="submit" className="search-button">
-              查找 🔍
+              {t('common.search')} 🔍
             </button>
           </div>
         </form>
@@ -237,22 +239,22 @@ function UnshelvingPage() {
             }}
           >
             <div className="match-header">
-              <div className="match-title">✅ 下架成功！</div>
+              <div className="match-title">✅ {t('unshelving.unshelvingSuccessTitle')}</div>
               <button className="close-match-button" onClick={handleClearMatch}>
                 ✕
               </button>
             </div>
             <div className="match-content">
               <div className="match-info-row">
-                <span className="match-label">运单号：</span>
+                <span className="match-label">{t('unshelving.packageNumber')}:</span>
                 <span className="match-value highlight">{matchedPackage.package_number || matchedPackage.packageNumber}</span>
               </div>
               <div className="match-info-row">
-                <span className="match-label">库位号：</span>
+                <span className="match-label">{t('unshelving.location')}:</span>
                 <span className="match-value location">{matchedPackage.location}</span>
               </div>
               <div className="match-info-row">
-                <span className="match-label">客服指令：</span>
+                <span className="match-label">{t('unshelving.instruction')}:</span>
                 <span 
                   className="match-status-badge"
                   style={{ backgroundColor: getInstructionColor(matchedPackage.customer_service || matchedPackage.customerService) }}
@@ -261,7 +263,7 @@ function UnshelvingPage() {
                 </span>
               </div>
               <div className="match-info-row">
-                <span className="match-label">上架时间：</span>
+                <span className="match-label">{t('unshelving.shelvingTime')}:</span>
                 <span className="match-value">
                   {matchedPackage.shelving_time_display || 
                    matchedPackage.shelvingTimeDisplay || 
@@ -272,24 +274,24 @@ function UnshelvingPage() {
             <div className="match-success-indicator">
               <div className="success-icon">✅</div>
               <div className="success-text">
-                已成功下架！
+                {t('unshelving.successfullyUnshelved')}
                 <span className="instruction-label-inline">
                   {getInstructionLabel(matchedPackage.customer_service || matchedPackage.customerService)}
                 </span>
               </div>
-              <div className="auto-close-hint">扫描下一个运单即可更新</div>
+              <div className="auto-close-hint">{t('unshelving.scanNextHint')}</div>
             </div>
           </div>
         )}
 
         <div className="packages-by-location">
-          <h2 className="section-title">按库位分类 ({Object.keys(groupedPackages).length} 个库位)</h2>
+          <h2 className="section-title">{t('unshelving.byLocation')} ({Object.keys(groupedPackages).length} {t('unshelving.locations')})</h2>
           
           {Object.keys(groupedPackages).length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">📭</div>
-              <p>暂无待下架运单</p>
-              <p className="empty-hint">运单在"中心退回管理"中下达指令后，状态会自动变为"待下架"并显示在此处</p>
+              <p>{t('unshelving.noPackages')}</p>
+              <p className="empty-hint">{t('unshelving.noPackagesHint')}</p>
             </div>
           ) : (
             <div className="location-groups">
@@ -297,7 +299,7 @@ function UnshelvingPage() {
                 <div key={location} className="location-group-card">
                   <div className="location-group-header">
                     <h3 className="location-name">📍 {location}</h3>
-                    <span className="package-count">{pkgs.length} 个运单</span>
+                    <span className="package-count">{pkgs.length} {t('unshelving.packages')}</span>
                   </div>
                   <div className="packages-list">
                     {pkgs.map((pkg) => (

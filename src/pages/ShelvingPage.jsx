@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { getAllLocations, getAllPackages } from '../services/dataService'
+import { useLanguage } from '../contexts/LanguageContext'
 import './ShelvingPage.css'
 
 function ShelvingPage() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const [selectedLocation, setSelectedLocation] = useState('')
   const [locations, setLocations] = useState([])
   const [isOnline, setIsOnline] = useState(true)
@@ -123,19 +125,19 @@ function ShelvingPage() {
     <div className="shelving-page">
       <div className="shelving-container">
         <button className="back-button" onClick={() => navigate('/')}>
-          ← 返回首页
+          ← {t('common.back')}
         </button>
 
         <div className="shelving-header">
           <div className="header-icon">📦</div>
-          <h1>上架管理</h1>
-          <p>请选择库位号</p>
+          <h1>{t('shelving.title')}</h1>
+          <p>{t('shelving.selectLocation')}</p>
         </div>
 
         {/* 离线指示器 */}
         {!isOnline && (
           <div className="offline-indicator">
-            ⚠️ 连接已断开，正在重连...
+            ⚠️ {t('messages.reconnecting')}
           </div>
         )}
 
@@ -143,24 +145,24 @@ function ShelvingPage() {
           {loading ? (
             <div className="loading-container">
               <div className="loading-spinner"></div>
-              <p>加载中...</p>
+              <p>{t('common.loading')}</p>
             </div>
           ) : locations.length === 0 ? (
             <div className="no-locations-warning">
               <div className="warning-icon">⚠️</div>
-              <h3>暂无可用库位</h3>
-              <p>请先在"退件看板 → 库位管理"中添加库位号</p>
+              <h3>{t('shelving.noLocations')}</h3>
+              <p>{t('shelving.addLocationsFirst')}</p>
               <button
                 className="go-to-management-button"
                 onClick={() => navigate('/return-dashboard/location-management')}
               >
-                前往库位管理 →
+                {t('shelving.goToManagement')} →
               </button>
             </div>
           ) : (
             <>
               <div className="location-header-info">
-                <p>共有 {locations.length} 个可用库位</p>
+                <p>{t('shelving.totalLocations', { count: locations.length })}</p>
               </div>
 
               <div className="location-grid">
@@ -173,7 +175,7 @@ function ShelvingPage() {
                       onClick={() => handleLocationSelect(location.code)}
                     >
                       <span className="location-code">{location.code}</span>
-                      <span className="package-count">{count} 件</span>
+                      <span className="package-count">{count} {t('shelving.items')}</span>
                     </button>
                   )
                 })}
@@ -183,7 +185,7 @@ function ShelvingPage() {
 
           {currentLocation && (
             <div className="selected-info">
-              <p>已选择库位：<strong>{currentLocation}</strong></p>
+              <p>{t('shelving.selectedLocation')}: <strong>{currentLocation}</strong></p>
             </div>
           )}
 
@@ -192,7 +194,7 @@ function ShelvingPage() {
             onClick={handleContinue}
             disabled={!currentLocation}
           >
-            继续 →
+            {t('common.continue')} →
           </button>
         </div>
       </div>

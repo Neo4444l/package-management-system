@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { supabase } from '../supabaseClient'
+import { useLanguage } from '../contexts/LanguageContext'
 import './Login.css'
 
 export default function Login({ onLogin }) {
+  const { t, language, changeLanguage } = useLanguage()
   const [loading, setLoading] = useState(false)
   const [showResetPassword, setShowResetPassword] = useState(false)
   const [email, setEmail] = useState('')
@@ -49,7 +51,7 @@ export default function Login({ onLogin }) {
 
       if (error) throw error
 
-      setSuccess('✅ 密码重置邮件已发送！请检查您的邮箱（包括垃圾邮件文件夹）。')
+      setSuccess(t('auth.passwordResetEmailSent'))
       
       // 清空表单
       setResetEmail('')
@@ -60,7 +62,7 @@ export default function Login({ onLogin }) {
         setSuccess('')
       }, 5000)
     } catch (error) {
-      setError(error.message || '发送失败，请稍后重试')
+      setError(error.message || t('messages.operationFailed'))
     } finally {
       setLoading(false)
     }
@@ -70,20 +72,36 @@ export default function Login({ onLogin }) {
     return (
       <div className="login-container">
         <div className="login-box">
-          <h1>📦 退回包裹管理系统</h1>
-          <h2>忘记/修改密码</h2>
+          {/* 语言切换按钮 */}
+          <div className="language-switcher">
+            <button
+              className={`lang-btn ${language === 'zh' ? 'active' : ''}`}
+              onClick={() => changeLanguage('zh')}
+            >
+              中文
+            </button>
+            <button
+              className={`lang-btn ${language === 'en' ? 'active' : ''}`}
+              onClick={() => changeLanguage('en')}
+            >
+              English
+            </button>
+          </div>
+
+          <h1>📦 {t('app.title')}</h1>
+          <h2>{t('auth.forgotPassword')}</h2>
           <p className="reset-description">
-            输入您的邮箱地址，我们将发送密码重置链接到您的邮箱
+            {t('auth.resetDescription')}
           </p>
           
           <form onSubmit={handleResetPassword}>
             <div className="form-group">
-              <label>邮箱</label>
+              <label>{t('auth.email')}</label>
               <input
                 type="email"
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
-                placeholder="请输入您的注册邮箱"
+                placeholder={t('auth.enterRegisteredEmail')}
                 required
               />
             </div>
@@ -92,7 +110,7 @@ export default function Login({ onLogin }) {
             {success && <div className="success-message">{success}</div>}
 
             <button type="submit" disabled={loading} className="btn-primary">
-              {loading ? '发送中...' : '发送重置邮件'}
+              {loading ? t('auth.sendingEmail') : t('auth.sendResetEmail')}
             </button>
           </form>
 
@@ -104,7 +122,7 @@ export default function Login({ onLogin }) {
                 setSuccess('')
                 setResetEmail('')
               }}>
-                返回登录
+                {t('auth.returnToLogin')}
               </button>
             </p>
           </div>
@@ -116,28 +134,44 @@ export default function Login({ onLogin }) {
   return (
     <div className="login-container">
       <div className="login-box">
-        <h1>📦 退回包裹管理系统</h1>
-        <h2>登录</h2>
+        {/* 语言切换按钮 */}
+        <div className="language-switcher">
+          <button
+            className={`lang-btn ${language === 'zh' ? 'active' : ''}`}
+            onClick={() => changeLanguage('zh')}
+          >
+            中文
+          </button>
+          <button
+            className={`lang-btn ${language === 'en' ? 'active' : ''}`}
+            onClick={() => changeLanguage('en')}
+          >
+            English
+          </button>
+        </div>
+
+        <h1>📦 {t('app.title')}</h1>
+        <h2>{t('auth.login')}</h2>
         
         <form onSubmit={handleLogin}>
           <div className="form-group">
-            <label>邮箱</label>
+            <label>{t('auth.email')}</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="请输入邮箱"
+              placeholder={t('auth.enterEmail')}
               required
             />
           </div>
 
           <div className="form-group">
-            <label>密码</label>
+            <label>{t('auth.password')}</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="请输入密码"
+              placeholder={t('auth.enterPassword')}
               required
             />
           </div>
@@ -145,7 +179,7 @@ export default function Login({ onLogin }) {
           {error && <div className="error-message">{error}</div>}
 
           <button type="submit" disabled={loading} className="btn-primary">
-            {loading ? '登录中...' : '登录'}
+            {loading ? t('auth.loggingIn') : t('auth.login')}
           </button>
         </form>
 
@@ -155,11 +189,11 @@ export default function Login({ onLogin }) {
               setShowResetPassword(true)
               setError('')
             }}>
-              忘记/修改密码
+              {t('auth.forgotPassword')}
             </button>
           </p>
           <p className="admin-note">
-            ℹ️ 新用户账号请联系管理员创建
+            {t('auth.newUserContact')}
           </p>
         </div>
       </div>

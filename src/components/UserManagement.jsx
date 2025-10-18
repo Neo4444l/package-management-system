@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
+import { useLanguage } from '../contexts/LanguageContext'
 import './UserManagement.css'
 
 export default function UserManagement() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [currentUserId, setCurrentUserId] = useState(null)
@@ -62,7 +64,7 @@ export default function UserManagement() {
       const validUsers = (data || []).filter(user => user.email && user.id)
       setUsers(validUsers)
     } catch (error) {
-      setError('获取用户列表失败：' + error.message)
+      setError(t('messages.loadingFailed') + ': ' + error.message)
     } finally {
       setLoading(false)
     }
@@ -91,7 +93,7 @@ export default function UserManagement() {
         currentUserRole === 'admin'
 
       if (isSelfDemotion) {
-        if (!window.confirm('警告：您正在降低自己的权限！\n\n降级后您将无法访问用户管理页面，并会自动返回首页。\n\n确定要继续吗？')) {
+        if (!window.confirm(t('userManagement.demoteWarning'))) {
           // 取消更改
           const newPending = { ...pendingRoleChanges }
           delete newPending[userId]
@@ -112,7 +114,7 @@ export default function UserManagement() {
       delete newPending[userId]
       setPendingRoleChanges(newPending)
 
-      setSuccess('角色更新成功！')
+      setSuccess(t('userManagement.roleUpdated') + '!')
       await fetchUsers()
 
       // 如果是自己降级，跳转到首页
@@ -145,7 +147,7 @@ export default function UserManagement() {
 
       if (error) throw error
 
-      setSuccess('用户状态更新成功！')
+      setSuccess(t('userManagement.statusUpdated') + '!')
       fetchUsers()
     } catch (error) {
       setError('更新失败：' + error.message)
@@ -159,14 +161,14 @@ export default function UserManagement() {
 
       // 防止删除自己
       if (userId === currentUserId) {
-        setError('不能删除当前登录的用户！')
+        setError(t('userManagement.cannotDeleteSelf') + '!')
         return
       }
 
       const user = users.find(u => u.id === userId)
       // 二次确认
       const confirmed = window.confirm(
-        `⚠️ 警告：此操作不可撤销！\n\n确定要删除用户 "${user?.username || userEmail}" 吗？\n\n删除后该用户将无法登录系统。`
+        `⚠️ ${t('userManagement.deleteWarning')}\n\n${t('userManagement.deleteConfirm')} "${user?.username || userEmail}"?\n\n${t('messages.actionCannotUndo')}`
       )
 
       if (!confirmed) return
@@ -186,7 +188,7 @@ export default function UserManagement() {
       // 验证删除是否成功 - 立即从state中移除该用户
       setUsers(prevUsers => prevUsers.filter(u => u.id !== userId))
       
-      setSuccess(`用户"${user?.username || userEmail}"已成功删除！`)
+      setSuccess(`${t('userManagement.userDeleted')}: "${user?.username || userEmail}"!`)
       
       // 3秒后清除成功消息
       setTimeout(() => {
@@ -194,7 +196,7 @@ export default function UserManagement() {
       }, 3000)
     } catch (error) {
       console.error('删除用户失败:', error)
-      setError('删除失败：' + error.message)
+      setError(t('messages.deleteFailed') + ': ' + error.message)
       // 如果删除失败，刷新列表以恢复正确状态
       await fetchUsers()
     }
@@ -213,7 +215,7 @@ export default function UserManagement() {
 
       // 验证用户名
       if (!editUsername || editUsername.trim().length < 2) {
-        throw new Error('用户名至少需要2个字符')
+        throw new Error(t('userManagement.usernameMinLength'))
       }
 
       // 检查用户名是否与其他用户重复
@@ -226,7 +228,7 @@ export default function UserManagement() {
           .single()
 
         if (existingUser) {
-          throw new Error('用户名已存在，请使用其他用户名')
+          throw new Error(t('userManagement.userExists'))
         }
       }
 
@@ -241,7 +243,7 @@ export default function UserManagement() {
 
       if (profileError) throw profileError
 
-      setSuccess(`用户"${editUsername.trim()}"的信息已更新！`)
+      setSuccess(`${t('userManagement.userUpdated')}: "${editUsername.trim()}"!`)
       setShowEditModal(false)
       setEditingUser(null)
       await fetchUsers()
@@ -257,11 +259,11 @@ export default function UserManagement() {
 
     try {
       if (newUserPassword.length < 6) {
-        throw new Error('密码至少需要6个字符')
+        throw new Error(t('auth.passwordTooShort'))
       }
 
       if (!newUserUsername || newUserUsername.trim().length < 2) {
-        throw new Error('用户名至少需要2个字符')
+        throw new Error(t('userManagement.usernameMinLength'))
       }
 
       // 检查用户名是否已存在
@@ -272,7 +274,7 @@ export default function UserManagement() {
         .single()
 
       if (existingUser) {
-        throw new Error('用户名已存在，请使用其他用户名')
+        throw new Error(t('userManagement.userExists'))
       }
 
       // 创建新用户
@@ -299,7 +301,7 @@ export default function UserManagement() {
         if (profileError) throw profileError
       }
 
-      setSuccess('用户创建成功！')
+      setSuccess(t('userManagement.userCreated') + '!')
       setShowCreateUser(false)
       setNewUserEmail('')
       setNewUserUsername('')
@@ -311,7 +313,7 @@ export default function UserManagement() {
         fetchUsers()
       }, 1000)
     } catch (error) {
-      setError('创建失败：' + error.message)
+      setError(t('messages.createFailed') + ': ' + error.message)
     }
   }
 
@@ -329,11 +331,11 @@ export default function UserManagement() {
   const getRoleText = (role) => {
     switch (role) {
       case 'admin':
-        return '管理员'
+        return t('roles.admin')
       case 'manager':
-        return '经理'
+        return t('roles.manager')
       default:
-        return '普通用户'
+        return t('roles.user')
     }
   }
 
@@ -341,7 +343,7 @@ export default function UserManagement() {
   if (roleLoading) {
     return (
       <div className="user-management">
-        <div className="loading">正在验证权限...</div>
+        <div className="loading">{t('common.loading')}</div>
       </div>
     )
   }
@@ -351,10 +353,10 @@ export default function UserManagement() {
     return (
       <div className="user-management">
         <div className="access-denied">
-          <h2>⛔ 访问被拒绝</h2>
-          <p>只有管理员可以访问用户管理页面</p>
+          <h2>⛔ {t('userManagement.accessDenied')}</h2>
+          <p>{t('userManagement.adminOnly')}</p>
           <button onClick={() => navigate('/')} className="btn-back">
-            返回首页
+            {t('common.back')}
           </button>
         </div>
       </div>
@@ -364,7 +366,7 @@ export default function UserManagement() {
   if (loading) {
     return (
       <div className="user-management">
-        <div className="loading">加载中...</div>
+        <div className="loading">{t('common.loading')}</div>
       </div>
     )
   }
@@ -372,21 +374,21 @@ export default function UserManagement() {
   return (
     <div className="user-management">
       <button className="back-button-top" onClick={() => navigate('/')}>
-        ← 返回首页
+        ← {t('common.back')}
       </button>
       
       <div className="management-content">
         <div className="management-header">
           <div className="management-icon">👥</div>
-          <h1>用户管理</h1>
-          <p className="subtitle">管理系统用户和权限</p>
+          <h1>{t('userManagement.title')}</h1>
+          <p className="subtitle">{t('userManagement.subtitle')}</p>
           
           <div className="header-content">
             <button 
               className="btn-create-user"
               onClick={() => setShowCreateUser(true)}
             >
-              ➕ 创建新用户
+              ➕ {t('userManagement.createUser')}
             </button>
           </div>
         </div>
@@ -406,25 +408,25 @@ export default function UserManagement() {
       <div className="stats-cards">
         <div className="stat-card">
           <div className="stat-number">{users.length}</div>
-          <div className="stat-label">总用户数</div>
+          <div className="stat-label">{t('userManagement.totalUsers')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-number">
             {users.filter(u => u.is_active).length}
           </div>
-          <div className="stat-label">激活用户</div>
+          <div className="stat-label">{t('userManagement.activeUsers')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-number">
             {users.filter(u => u.role === 'admin').length}
           </div>
-          <div className="stat-label">管理员</div>
+          <div className="stat-label">{t('userManagement.admins')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-number">
             {users.filter(u => u.role === 'manager').length}
           </div>
-          <div className="stat-label">经理</div>
+          <div className="stat-label">{t('userManagement.managers')}</div>
         </div>
       </div>
 
@@ -432,14 +434,14 @@ export default function UserManagement() {
         <table className="users-table">
           <thead>
             <tr>
-              <th>邮箱</th>
-              <th>用户名</th>
-              <th>姓名</th>
-              <th>角色</th>
-              <th>部门</th>
-              <th>状态</th>
-              <th>注册时间</th>
-              <th>操作</th>
+              <th>{t('auth.email')}</th>
+              <th>{t('userManagement.username')}</th>
+              <th>{t('userManagement.fullName')}</th>
+              <th>{t('roles.role')}</th>
+              <th>{t('userManagement.department')}</th>
+              <th>{t('userManagement.status')}</th>
+              <th>{t('userManagement.registrationDate')}</th>
+              <th>{t('userManagement.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -456,7 +458,7 @@ export default function UserManagement() {
                 <td>{user.department || '-'}</td>
                 <td>
                   <span className={`status-badge ${user.is_active ? 'active' : 'inactive'}`}>
-                    {user.is_active ? '激活' : '停用'}
+                    {user.is_active ? t('userManagement.active') : t('userManagement.inactive')}
                   </span>
                 </td>
                 <td>{new Date(user.created_at).toLocaleDateString('zh-CN')}</td>
@@ -468,9 +470,9 @@ export default function UserManagement() {
                       className="role-select"
                       disabled={user.id === currentUserId}
                     >
-                      <option value="user">普通用户</option>
-                      <option value="manager">经理</option>
-                      <option value="admin">管理员</option>
+                      <option value="user">{t('roles.user')}</option>
+                      <option value="manager">{t('roles.manager')}</option>
+                      <option value="admin">{t('roles.admin')}</option>
                     </select>
                     {pendingRoleChanges[user.id] && pendingRoleChanges[user.id] !== user.role && (
                       <div className="confirm-buttons">
@@ -495,12 +497,12 @@ export default function UserManagement() {
                       className={`btn-toggle ${user.is_active ? 'btn-deactivate' : 'btn-activate'}`}
                       disabled={user.id === currentUserId}
                     >
-                      {user.is_active ? '停用' : '激活'}
+                      {user.is_active ? t('userManagement.deactivate') : t('userManagement.activate')}
                     </button>
                     <button
                       onClick={() => handleEditUser(user)}
                       className="btn-edit"
-                      title="编辑用户名"
+                      title={t('common.edit')}
                     >
                       ✏️
                     </button>
@@ -508,7 +510,7 @@ export default function UserManagement() {
                       onClick={() => handleDeleteUser(user.id, user.email)}
                       className="btn-delete"
                       disabled={user.id === currentUserId}
-                      title={user.id === currentUserId ? '不能删除自己' : '删除用户'}
+                      title={user.id === currentUserId ? t('userManagement.cannotDeleteSelf') : t('userManagement.deleteUser')}
                     >
                       🗑️
                     </button>
@@ -522,7 +524,7 @@ export default function UserManagement() {
 
         {users.length === 0 && (
           <div className="empty-state">
-            <p>暂无用户数据</p>
+            <p>{t('messages.loadingFailed')}</p>
           </div>
         )}
       </div>
@@ -531,13 +533,13 @@ export default function UserManagement() {
       {showEditModal && editingUser && (
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>编辑用户信息</h2>
+            <h2>{t('userManagement.editUser')}</h2>
             <form onSubmit={(e) => {
               e.preventDefault()
               handleSaveEdit()
             }}>
               <div className="form-group">
-                <label>邮箱</label>
+                <label>{t('auth.email')}</label>
                 <input
                   type="email"
                   value={editingUser.email}
@@ -545,16 +547,16 @@ export default function UserManagement() {
                   style={{background: '#f5f5f5', cursor: 'not-allowed', color: '#999'}}
                 />
                 <small style={{color: '#999', fontSize: '0.85em'}}>
-                  ℹ️ 邮箱不可修改，如需更改请删除用户后重新创建
+                  ℹ️ {t('userManagement.emailCannotChange')}
                 </small>
               </div>
               <div className="form-group">
-                <label>用户名</label>
+                <label>{t('userManagement.username')}</label>
                 <input
                   type="text"
                   value={editUsername}
                   onChange={(e) => setEditUsername(e.target.value)}
-                  placeholder="请输入用户名"
+                  placeholder={t('userManagement.enterUsername')}
                   required
                   minLength={2}
                   maxLength={50}
@@ -562,7 +564,7 @@ export default function UserManagement() {
               </div>
               <div className="modal-buttons">
                 <button type="submit" className="btn-submit">
-                  保存
+                  {t('common.save')}
                 </button>
                 <button 
                   type="button" 
@@ -572,7 +574,7 @@ export default function UserManagement() {
                     setEditingUser(null)
                   }}
                 >
-                  取消
+                  {t('common.cancel')}
                 </button>
               </div>
             </form>
@@ -584,59 +586,59 @@ export default function UserManagement() {
       {showCreateUser && (
         <div className="modal-overlay" onClick={() => setShowCreateUser(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>创建新用户</h2>
+            <h2>{t('userManagement.createUser')}</h2>
             <form onSubmit={handleCreateUser}>
               <div className="form-group">
-                <label>邮箱</label>
+                <label>{t('auth.email')}</label>
                 <input
                   type="email"
                   value={newUserEmail}
                   onChange={(e) => setNewUserEmail(e.target.value)}
-                  placeholder="请输入用户邮箱"
+                  placeholder={t('auth.enterEmail')}
                   required
                 />
               </div>
               <div className="form-group">
-                <label>用户名</label>
+                <label>{t('userManagement.username')}</label>
                 <input
                   type="text"
                   value={newUserUsername}
                   onChange={(e) => setNewUserUsername(e.target.value)}
-                  placeholder="请输入用户名（至少2位）"
+                  placeholder={t('userManagement.enterUsername')}
                   required
                   minLength={2}
                   maxLength={50}
                 />
                 <small style={{color: '#666', fontSize: '0.85em'}}>
-                  用户名用于系统显示，不能重复
+                  {t('userManagement.usernameForDisplay')}
                 </small>
               </div>
               <div className="form-group">
-                <label>初始密码</label>
+                <label>{t('userManagement.initialPassword')}</label>
                 <input
                   type="password"
                   value={newUserPassword}
                   onChange={(e) => setNewUserPassword(e.target.value)}
-                  placeholder="请输入初始密码（至少6位）"
+                  placeholder={t('userManagement.enterInitialPassword')}
                   required
                   minLength={6}
                 />
               </div>
               <div className="form-group">
-                <label>角色</label>
+                <label>{t('roles.role')}</label>
                 <select
                   value={newUserRole}
                   onChange={(e) => setNewUserRole(e.target.value)}
                   className="role-select-modal"
                 >
-                  <option value="user">普通用户</option>
-                  <option value="manager">经理</option>
-                  <option value="admin">管理员</option>
+                  <option value="user">{t('roles.user')}</option>
+                  <option value="manager">{t('roles.manager')}</option>
+                  <option value="admin">{t('roles.admin')}</option>
                 </select>
               </div>
               <div className="modal-buttons">
                 <button type="submit" className="btn-submit">
-                  创建
+                  {t('common.submit')}
                 </button>
                 <button 
                   type="button" 
@@ -649,7 +651,7 @@ export default function UserManagement() {
                     setNewUserRole('user')
                   }}
                 >
-                  取消
+                  {t('common.cancel')}
                 </button>
               </div>
             </form>

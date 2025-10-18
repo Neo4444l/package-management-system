@@ -1,23 +1,25 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useLanguage } from '../contexts/LanguageContext'
 import './ReturnDashboard.css'
 
 function ReturnDashboard() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
 
   const subModules = [
     {
       id: 'location-management',
-      title: '库位管理',
-      description: '管理库位号、生成二维码',
+      title: t('dashboard.locationManagement'),
+      description: t('dashboard.locationManagementDesc'),
       icon: '📍',
       color: '#FF9800',
       path: '/return-dashboard/location-management'
     },
     {
       id: 'center-return',
-      title: '中心退回管理',
-      description: '运单查询、状态管理、指令下达',
+      title: t('dashboard.centerReturn'),
+      description: t('dashboard.centerReturnDesc'),
       icon: '📊',
       color: '#FF5722',
       path: '/return-dashboard/center-return'
@@ -28,13 +30,13 @@ function ReturnDashboard() {
     <div className="return-dashboard-page">
       <div className="return-dashboard-container">
         <button className="back-button" onClick={() => navigate('/')}>
-          ← 返回首页
+          ← {t('common.back')}
         </button>
 
         <div className="dashboard-header">
           <div className="header-icon">↩️</div>
-          <h1>退件看板</h1>
-          <p>选择功能模块</p>
+          <h1>{t('dashboard.title')}</h1>
+          <p>{t('dashboard.selectModule')}</p>
         </div>
 
         <div className="submodules-grid">

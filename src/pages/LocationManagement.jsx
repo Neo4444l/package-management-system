@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { supabase } from '../supabaseClient'
 import { addLocation, getAllLocations, deleteLocation } from '../services/dataService'
+import { useLanguage } from '../contexts/LanguageContext'
 import './LocationManagement.css'
 
 function LocationManagement() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const [locationInput, setLocationInput] = useState('')
   const [locations, setLocations] = useState([])
   const [notification, setNotification] = useState(null)
@@ -42,12 +44,12 @@ function LocationManagement() {
               }
               return [...prev, payload.new]
             })
-            showNotification(`📍 新库位已添加：${payload.new.code}`, 'info')
+            showNotification(`📍 ${t('locationManagement.newLocationAdded')}: ${payload.new.code}`, 'info')
           } else if (payload.eventType === 'DELETE') {
             // 其他用户删除了库位
             setLocations(prev => prev.filter(l => l.id !== payload.old.id))
             setSelectedLocations(prev => prev.filter(id => id !== payload.old.id))
-            showNotification(`🗑️ 库位已被删除：${payload.old.code}`, 'info')
+            showNotification(`🗑️ ${t('locationManagement.locationDeleted')}: ${payload.old.code}`, 'info')
           }
         }
       )
@@ -65,7 +67,7 @@ function LocationManagement() {
       setLocations(allLocations)
     } catch (error) {
       console.error('Error loading locations:', error)
-      showNotification('加载库位数据失败', 'error')
+      showNotification(t('messages.loadingFailed'), 'error')
     }
   }
 
@@ -78,13 +80,13 @@ function LocationManagement() {
     e.preventDefault()
     
     if (!locationInput.trim()) {
-      showNotification('请输入库位号', 'error')
+      showNotification(t('locationManagement.enterLocationCode'), 'error')
       return
     }
 
     // 检查是否已存在
     if (locations.some(loc => loc.code === locationInput.trim())) {
-      showNotification('该库位号已存在', 'error')
+      showNotification(t('locationManagement.locationExists'), 'error')
       return
     }
 
@@ -96,10 +98,10 @@ function LocationManagement() {
       setLocations(updatedLocations)
       
       setLocationInput('')
-      showNotification(`库位 ${newLocation.code} 已添加到云端`, 'success')
+      showNotification(`${t('locationManagement.location')} ${newLocation.code} ${t('locationManagement.addedToCloud')}`, 'success')
     } catch (error) {
       console.error('Error adding location:', error)
-      showNotification('添加失败：' + error.message, 'error')
+      showNotification(t('locationManagement.addFailed') + ': ' + error.message, 'error')
     }
   }
 
@@ -123,11 +125,11 @@ function LocationManagement() {
       let confirmed = false
       if (packageCount > 0) {
         confirmed = window.confirm(
-          `⚠️ 警告：\n\n该库位（${location.code}）中有 ${packageCount} 个包裹。\n\n删除库位将同时删除这些包裹，此操作不可撤销！\n\n确定要继续吗？`
+          `⚠️ ${t('locationManagement.deleteWarning')}:\n\n${t('locationManagement.locationHasPackages', { location: location.code, count: packageCount })}\n\n${t('locationManagement.deleteWithPackagesWarning')}\n\n${t('locationManagement.confirmContinue')}`
         )
       } else {
         confirmed = window.confirm(
-          `确定要删除库位"${location.code}"吗？\n\n此操作不可撤销。`
+          `${t('locationManagement.confirmDeleteLocation', { location: location.code })}\n\n${t('messages.actionCannotUndo')}`
         )
       }
       
@@ -151,13 +153,13 @@ function LocationManagement() {
       setSelectedLocations(selectedLocations.filter(sid => sid !== id))
       
       if (packageCount > 0) {
-        showNotification(`库位及其 ${packageCount} 个包裹已删除`, 'success')
+        showNotification(t('locationManagement.locationAndPackagesDeleted', { count: packageCount }), 'success')
       } else {
-        showNotification('库位已从云端删除', 'success')
+        showNotification(t('locationManagement.locationDeletedFromCloud'), 'success')
       }
     } catch (error) {
       console.error('Error deleting location:', error)
-      showNotification('删除失败：' + error.message, 'error')
+      showNotification(t('messages.deleteFailed') + ': ' + error.message, 'error')
     }
   }
 
@@ -181,7 +183,7 @@ function LocationManagement() {
 
   const handlePrintQRCodes = async () => {
     if (selectedLocations.length === 0) {
-      showNotification('请先选择要打印的库位', 'error')
+      showNotification(t('locationManagement.selectLocationsToPrint'), 'error')
       return
     }
 
@@ -286,7 +288,7 @@ function LocationManagement() {
 
       const dateDiv = printWindow.document.createElement('div')
       dateDiv.className = 'qr-date'
-      dateDiv.textContent = `创建时间: ${location.created_at_display || location.createdAtDisplay}`
+      dateDiv.textContent = `${t('locationManagement.createdTime')}: ${location.created_at_display || location.createdAtDisplay}`
 
       qrItem.appendChild(canvas)
       qrItem.appendChild(codeDiv)
@@ -301,7 +303,7 @@ function LocationManagement() {
       printWindow.print()
     }, 500)
 
-    showNotification(`正在生成 ${selectedLocations.length} 个二维码`, 'success')
+    showNotification(t('locationManagement.generatingQRCodes', { count: selectedLocations.length }), 'success')
   }
 
   return (
@@ -309,7 +311,7 @@ function LocationManagement() {
       {/* 离线指示器 */}
       {!isOnline && (
         <div className="offline-indicator">
-          ⚠️ 连接已断开，正在重连...
+          ⚠️ {t('messages.reconnecting')}
         </div>
       )}
 
@@ -321,30 +323,30 @@ function LocationManagement() {
 
       <div className="location-management-container">
         <button className="back-button" onClick={() => navigate('/return-dashboard')}>
-          ← 返回退件看板
+          ← {t('locationManagement.backToDashboard')}
         </button>
 
         <div className="location-header">
           <div className="header-icon">📍</div>
-          <h1>库位管理</h1>
-          <p>添加、管理和打印库位二维码</p>
+          <h1>{t('locationManagement.title')}</h1>
+          <p>{t('locationManagement.subtitle')}</p>
         </div>
 
         <form className="location-form" onSubmit={handleAddLocation}>
           <div className="form-group">
-            <label htmlFor="location-input">添加新库位：</label>
+            <label htmlFor="location-input">{t('locationManagement.addNewLocation')}:</label>
             <div className="input-with-button">
               <input
                 id="location-input"
                 type="text"
                 className="location-input"
-                placeholder="输入库位号（例如：A-01）"
+                placeholder={t('locationManagement.enterLocationPlaceholder')}
                 value={locationInput}
                 onChange={(e) => setLocationInput(e.target.value)}
                 autoComplete="off"
               />
               <button type="submit" className="add-button">
-                添加 ✓
+                {t('locationManagement.add')} ✓
               </button>
             </div>
           </div>
@@ -353,15 +355,15 @@ function LocationManagement() {
         <div className="locations-section">
           <div className="section-header">
             <h2>
-              库位列表 ({locations.length})
+              {t('locationManagement.locationList')} ({locations.length})
               {selectedLocations.length > 0 && (
-                <span className="selected-count"> - 已选择 {selectedLocations.length} 个</span>
+                <span className="selected-count"> - {t('locationManagement.selected', { count: selectedLocations.length })}</span>
               )}
             </h2>
             <div className="action-buttons">
               {locations.length > 0 && (
                 <button className="select-all-button" onClick={handleSelectAll}>
-                  {selectedLocations.length === locations.length ? '取消全选' : '全选'}
+                  {selectedLocations.length === locations.length ? t('locationManagement.deselectAll') : t('locationManagement.selectAll')}
                 </button>
               )}
               <button
@@ -369,7 +371,7 @@ function LocationManagement() {
                 onClick={handlePrintQRCodes}
                 disabled={selectedLocations.length === 0}
               >
-                打印二维码 🖨️
+                {t('locationManagement.printQRCodes')} 🖨️
               </button>
             </div>
           </div>
@@ -377,8 +379,8 @@ function LocationManagement() {
           {locations.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">📭</div>
-              <p>暂无库位</p>
-              <p className="empty-hint">请在上方输入框中添加库位号</p>
+              <p>{t('locationManagement.noLocations')}</p>
+              <p className="empty-hint">{t('locationManagement.addLocationHint')}</p>
             </div>
           ) : (
             <div className="locations-grid">
@@ -400,7 +402,7 @@ function LocationManagement() {
                   <button
                     className="delete-button"
                     onClick={() => handleDeleteLocation(location.id)}
-                    title="删除库位"
+                    title={t('locationManagement.deleteLocation')}
                   >
                     🗑️
                   </button>

@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { getAllPackages, updatePackage, deletePackage } from '../services/dataService'
+import { useLanguage } from '../contexts/LanguageContext'
 import './CenterReturnManagement.css'
 
 function CenterReturnManagement() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const [packages, setPackages] = useState([])
   const [filteredPackages, setFilteredPackages] = useState([])
   const [activeTab, setActiveTab] = useState('all')
@@ -162,7 +164,7 @@ function CenterReturnManagement() {
       filterPackages(packagesWithFormattedTime, activeTab, searchQuery)
     } catch (error) {
       console.error('Error loading packages:', error)
-      showNotification('加载包裹数据失败', 'error')
+      showNotification(t('messages.loadingFailed'), 'error')
     }
   }
 
@@ -268,7 +270,7 @@ function CenterReturnManagement() {
 
   const handleUpdateInstruction = async (instruction, instructionLabel) => {
     if (selectedPackages.length === 0) {
-      showNotification('请先选择要操作的运单', 'error')
+      showNotification(t('centerReturn.selectPackagesFirst'), 'error')
       return
     }
 
@@ -288,21 +290,21 @@ function CenterReturnManagement() {
       await loadPackages()
       setSelectedPackages([])
       setShowActionModal(false)
-      showNotification(`已将 ${selectedPackages.length} 个运单设置为"${instructionLabel}"，状态已更新为"待下架"`, 'success')
+      showNotification(t('centerReturn.instructionIssued', { count: selectedPackages.length, instruction: instructionLabel }), 'success')
     } catch (error) {
       console.error('Error updating packages:', error)
-      showNotification('更新失败：' + error.message, 'error')
+      showNotification(t('messages.updateFailed') + ': ' + error.message, 'error')
     }
   }
 
   const handleBatchDelete = async () => {
     if (selectedPackages.length === 0) {
-      showNotification('请先选择要删除的运单', 'error')
+      showNotification(t('centerReturn.selectPackagesFirst'), 'error')
       return
     }
 
     // 删除操作需要二次确认
-    if (window.confirm(`确定要删除选中的 ${selectedPackages.length} 个运单吗？\n\n此操作不可恢复！`)) {
+    if (window.confirm(t('centerReturn.deleteConfirm', { count: selectedPackages.length }) + '\n\n' + t('messages.actionCannotUndo'))) {
       try {
         // 批量删除
         const deletePromises = selectedPackages.map(pkgId => deletePackage(pkgId))
@@ -310,18 +312,18 @@ function CenterReturnManagement() {
         
         // 重新加载数据
         await loadPackages()
-        showNotification(`已从云端删除 ${selectedPackages.length} 个运单`, 'success')
+        showNotification(t('centerReturn.packagesDeleted', { count: selectedPackages.length }), 'success')
         setSelectedPackages([])
       } catch (error) {
         console.error('Error deleting packages:', error)
-        showNotification('删除失败：' + error.message, 'error')
+        showNotification(t('messages.deleteFailed') + ': ' + error.message, 'error')
       }
     }
   }
 
   const handleExportData = () => {
     if (selectedPackages.length === 0) {
-      showNotification('请先选择要导出的运单', 'error')
+      showNotification(t('centerReturn.selectPackagesFirst'), 'error')
       return
     }
 
@@ -330,27 +332,27 @@ function CenterReturnManagement() {
 
     // CSV 表头（所有列）
     const headers = [
-      '运单号',
-      '库位',
-      '包裹状态',
-      '客服指令',
-      '上架时间',
-      '下达指令时间',
-      '下架时间',
-      '最后操作用户'
+      t('centerReturn.packageNumber'),
+      t('centerReturn.location'),
+      t('centerReturn.packageStatus'),
+      t('centerReturn.customerService'),
+      t('centerReturn.shelvingTime'),
+      t('centerReturn.instructionTime'),
+      t('centerReturn.unshelvingTime'),
+      t('centerReturn.lastOperator')
     ]
 
     // 状态和指令的映射
     const statusMap = {
-      'in-warehouse': '在库内',
-      'pending-removal': '待下架',
-      'removed': '已下架'
+      'in-warehouse': t('packageStatus.in-warehouse'),
+      'pending-removal': t('packageStatus.pending-removal'),
+      'removed': t('packageStatus.removed')
     }
 
     const instructionMap = {
-      're-dispatch': '重派',
-      're-dispatch-new-label': '重派（新面单）',
-      'return-to-customer': '退回客户'
+      're-dispatch': t('customerService.re-dispatch'),
+      're-dispatch-new-label': t('customerService.re-dispatch-new-label'),
+      'return-to-customer': t('customerService.return-to-customer')
     }
 
     // 生成CSV内容
@@ -376,13 +378,13 @@ function CenterReturnManagement() {
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
     link.setAttribute('href', url)
-    link.setAttribute('download', `运单数据_${new Date().toLocaleDateString('zh-CN')}_${Date.now()}.csv`)
+    link.setAttribute('download', `${t('centerReturn.packageData')}_${new Date().toLocaleDateString('zh-CN')}_${Date.now()}.csv`)
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
 
-    showNotification(`已导出 ${selectedPackages.length} 个运单数据`, 'success')
+    showNotification(t('centerReturn.dataExported', { count: selectedPackages.length }), 'success')
   }
 
   const handleUpdatePackage = async (updates) => {
@@ -401,20 +403,20 @@ function CenterReturnManagement() {
       await loadPackages()
       setCurrentPackage(null)
       setShowManageModal(false)
-      showNotification('运单信息已更新到云端', 'success')
+      showNotification(t('centerReturn.packageUpdated'), 'success')
     } catch (error) {
       console.error('Error updating package:', error)
-      showNotification('更新失败：' + error.message, 'error')
+      showNotification(t('messages.updateFailed') + ': ' + error.message, 'error')
     }
   }
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'in-warehouse': { label: '在库内', color: '#4CAF50' },
-      'pending-removal': { label: '待下架', color: '#FF9800' },
-      'removed': { label: '已下架', color: '#999' }
+      'in-warehouse': { label: t('packageStatus.in-warehouse'), color: '#4CAF50' },
+      'pending-removal': { label: t('packageStatus.pending-removal'), color: '#FF9800' },
+      'removed': { label: t('packageStatus.removed'), color: '#999' }
     }
-    const config = statusConfig[status] || { label: '未知', color: '#999' }
+    const config = statusConfig[status] || { label: t('packageStatus.unknown'), color: '#999' }
     return (
       <span className="status-badge" style={{ backgroundColor: config.color }}>
         {config.label}
@@ -426,11 +428,11 @@ function CenterReturnManagement() {
     if (!instruction) return <span className="instruction-badge empty">-</span>
     
     const instructionConfig = {
-      're-dispatch': { label: '重派', color: '#9C27B0' },
-      're-dispatch-new-label': { label: '重派（新面单）', color: '#75D025' },
-      'return-to-customer': { label: '退回客户', color: '#F44336' }
+      're-dispatch': { label: t('customerService.re-dispatch'), color: '#9C27B0' },
+      're-dispatch-new-label': { label: t('customerService.re-dispatch-new-label'), color: '#75D025' },
+      'return-to-customer': { label: t('customerService.return-to-customer'), color: '#F44336' }
     }
-    const config = instructionConfig[instruction] || { label: '未知', color: '#999' }
+    const config = instructionConfig[instruction] || { label: t('packageStatus.unknown'), color: '#999' }
     return (
       <span className="instruction-badge" style={{ backgroundColor: config.color }}>
         {config.label}
@@ -464,7 +466,7 @@ function CenterReturnManagement() {
       {/* 离线指示器 */}
       {!isOnline && (
         <div className="offline-indicator">
-          ⚠️ 连接已断开，正在重连...
+          ⚠️ {t('messages.reconnecting')}
         </div>
       )}
 
@@ -476,33 +478,33 @@ function CenterReturnManagement() {
 
       <div className="center-return-container">
         <button className="back-button" onClick={() => navigate('/return-dashboard')}>
-          ← 返回退件看板
+          ← {t('locationManagement.backToDashboard')}
         </button>
 
         <div className="center-header">
           <div className="header-icon">📊</div>
-          <h1>中心退回管理</h1>
-          <p>运单查询、分类和状态管理</p>
+          <h1>{t('centerReturn.title')}</h1>
+          <p>{t('centerReturn.subtitle')}</p>
         </div>
 
         <div className="search-section">
           <input
             type="text"
             className="search-input"
-            placeholder="搜索运单号或库位号..."
+            placeholder={t('centerReturn.search')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
         <div className="filter-section">
-          <div className="filter-label">库位筛选：</div>
+          <div className="filter-label">{t('centerReturn.locationFilter')}:</div>
           <select
             className="filter-select"
             value={locationFilter}
             onChange={(e) => setLocationFilter(e.target.value)}
           >
-            <option value="">全部库位</option>
+            <option value="">{t('centerReturn.allLocations')}</option>
             {availableLocations.map(loc => (
               <option key={loc} value={loc}>{loc}</option>
             ))}
@@ -512,36 +514,36 @@ function CenterReturnManagement() {
               className="filter-clear-button"
               onClick={() => setLocationFilter('')}
             >
-              清除
+              {t('centerReturn.clear')}
             </button>
           )}
         </div>
 
         <div className="time-filter-section">
-          <div className="filter-label">时间筛选：</div>
+          <div className="filter-label">{t('centerReturn.timeFilter')}:</div>
           <select 
             className="filter-select"
             value={timeFilter.type}
             onChange={(e) => setTimeFilter({ ...timeFilter, type: e.target.value })}
           >
-            <option value="shelving">上架时间</option>
-            <option value="unshelving">下架时间</option>
-            <option value="instruction">下达指令时间</option>
+            <option value="shelving">{t('centerReturn.shelvingTime')}</option>
+            <option value="unshelving">{t('centerReturn.unshelvingTime')}</option>
+            <option value="instruction">{t('centerReturn.instructionTime')}</option>
           </select>
           <input
             type="date"
             className="filter-date"
             value={timeFilter.startDate}
             onChange={(e) => setTimeFilter({ ...timeFilter, startDate: e.target.value })}
-            placeholder="开始日期"
+            placeholder={t('centerReturn.startDate')}
           />
-          <span className="filter-separator">至</span>
+          <span className="filter-separator">{t('centerReturn.to')}</span>
           <input
             type="date"
             className="filter-date"
             value={timeFilter.endDate}
             onChange={(e) => setTimeFilter({ ...timeFilter, endDate: e.target.value })}
-            placeholder="结束日期"
+            placeholder={t('centerReturn.endDate')}
           />
           {(timeFilter.startDate || timeFilter.endDate) && (
             <button 
@@ -549,7 +551,7 @@ function CenterReturnManagement() {
               onClick={() => setAppliedTimeFilter(timeFilter)}
               disabled={!timeFilter.startDate || !timeFilter.endDate}
             >
-              进行筛选
+              {t('centerReturn.applyFilter')}
             </button>
           )}
           {(appliedTimeFilter.startDate || appliedTimeFilter.endDate) && (
@@ -560,59 +562,59 @@ function CenterReturnManagement() {
                 setAppliedTimeFilter({ type: 'shelving', startDate: '', endDate: '' })
               }}
             >
-              清除筛选
+              {t('centerReturn.clearFilter')}
             </button>
           )}
         </div>
 
         <div className="tabs-section">
           <div className="tab-group">
-            <div className="tab-group-label">状态</div>
+            <div className="tab-group-label">{t('centerReturn.status')}</div>
             <button
               className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
               onClick={() => handleTabChange('all')}
             >
-              全部 ({getTabCount('all')})
+              {t('centerReturn.all')} ({getTabCount('all')})
             </button>
             <button
               className={`tab-button ${activeTab === 'in-warehouse' ? 'active' : ''}`}
               onClick={() => handleTabChange('in-warehouse')}
             >
-              在库内 ({getTabCount('in-warehouse')})
+              {t('packageStatus.in-warehouse')} ({getTabCount('in-warehouse')})
             </button>
             <button
               className={`tab-button ${activeTab === 'pending-removal' ? 'active' : ''}`}
               onClick={() => handleTabChange('pending-removal')}
             >
-              待下架 ({getTabCount('pending-removal')})
+              {t('packageStatus.pending-removal')} ({getTabCount('pending-removal')})
             </button>
             <button
               className={`tab-button ${activeTab === 'removed' ? 'active' : ''}`}
               onClick={() => handleTabChange('removed')}
             >
-              已下架 ({getTabCount('removed')})
+              {t('packageStatus.removed')} ({getTabCount('removed')})
             </button>
           </div>
           
           <div className="tab-group">
-            <div className="tab-group-label">客服指令</div>
+            <div className="tab-group-label">{t('centerReturn.customerService')}</div>
             <button
               className={`tab-button ${activeTab === 're-dispatch' ? 'active' : ''}`}
               onClick={() => handleTabChange('re-dispatch')}
             >
-              重派 ({getTabCount('re-dispatch')})
+              {t('customerService.re-dispatch')} ({getTabCount('re-dispatch')})
             </button>
             <button
               className={`tab-button ${activeTab === 're-dispatch-new-label' ? 'active' : ''}`}
               onClick={() => handleTabChange('re-dispatch-new-label')}
             >
-              重派（新面单） ({getTabCount('re-dispatch-new-label')})
+              {t('customerService.re-dispatch-new-label')} ({getTabCount('re-dispatch-new-label')})
             </button>
             <button
               className={`tab-button ${activeTab === 'return-to-customer' ? 'active' : ''}`}
               onClick={() => handleTabChange('return-to-customer')}
             >
-              退回客户 ({getTabCount('return-to-customer')})
+              {t('customerService.return-to-customer')} ({getTabCount('return-to-customer')})
             </button>
           </div>
         </div>
@@ -620,13 +622,13 @@ function CenterReturnManagement() {
         <div className="actions-bar">
           <div className="selection-info">
             {selectedPackages.length > 0 && (
-              <span>已选择 {selectedPackages.length} 个运单</span>
+              <span>{t('centerReturn.selected', { count: selectedPackages.length })}</span>
             )}
           </div>
           <div className="action-buttons">
             {filteredPackages.length > 0 && (
               <button className="select-all-button" onClick={handleSelectAll}>
-                {selectedPackages.length === filteredPackages.length ? '取消全选' : '全选'}
+                {selectedPackages.length === filteredPackages.length ? t('centerReturn.deselectAll') : t('centerReturn.selectAll')}
               </button>
             )}
             <button
@@ -634,7 +636,7 @@ function CenterReturnManagement() {
               onClick={handleExportData}
               disabled={selectedPackages.length === 0}
             >
-              导出数据 📊
+              {t('centerReturn.exportData')} 📊
             </button>
             {(userRole === 'admin' || userRole === 'manager') && (
               <button
@@ -642,7 +644,7 @@ function CenterReturnManagement() {
                 onClick={() => setShowActionModal(true)}
                 disabled={selectedPackages.length === 0}
               >
-                指令下达 📋
+                {t('centerReturn.issueInstruction')} 📋
               </button>
             )}
             {userRole === 'admin' && (
@@ -651,7 +653,7 @@ function CenterReturnManagement() {
                 onClick={handleBatchDelete}
                 disabled={selectedPackages.length === 0}
               >
-                删除运单 🗑️
+                {t('centerReturn.deletePackages')} 🗑️
               </button>
             )}
           </div>
@@ -660,9 +662,9 @@ function CenterReturnManagement() {
         {filteredPackages.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">📭</div>
-            <p>{searchQuery ? '未找到匹配的运单' : '暂无运单记录'}</p>
+            <p>{searchQuery ? t('centerReturn.noMatchingPackages') : t('centerReturn.noPackages')}</p>
             <p className="empty-hint">
-              {searchQuery ? '尝试修改搜索关键词' : '通过"上架"或"下架"功能添加运单'}
+              {searchQuery ? t('centerReturn.tryDifferentKeyword') : t('centerReturn.addPackagesHint')}
             </p>
           </div>
         ) : (
@@ -677,15 +679,15 @@ function CenterReturnManagement() {
                       onChange={handleSelectAll}
                     />
                   </th>
-                  <th>运单号</th>
-                  <th>库位</th>
-                  <th>状态</th>
-                  <th>客服指令</th>
-                  <th>上架时间</th>
-                  <th>下达指令时间</th>
-                  <th>下架时间</th>
-                  <th>最后操作用户</th>
-                  {(userRole === 'admin' || userRole === 'manager') && <th>操作</th>}
+                  <th>{t('centerReturn.packageNumber')}</th>
+                  <th>{t('centerReturn.location')}</th>
+                  <th>{t('centerReturn.status')}</th>
+                  <th>{t('centerReturn.customerService')}</th>
+                  <th>{t('centerReturn.shelvingTime')}</th>
+                  <th>{t('centerReturn.instructionTime')}</th>
+                  <th>{t('centerReturn.unshelvingTime')}</th>
+                  <th>{t('centerReturn.lastOperator')}</th>
+                  {(userRole === 'admin' || userRole === 'manager') && <th>{t('centerReturn.actions')}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -715,7 +717,7 @@ function CenterReturnManagement() {
                             setShowManageModal(true)
                           }}
                         >
-                          管理
+                          {t('centerReturn.manage')}
                         </button>
                       </td>
                     )}
@@ -730,33 +732,33 @@ function CenterReturnManagement() {
       {showActionModal && (
         <div className="modal-overlay" onClick={() => setShowActionModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>指令下达</h2>
-            <p className="modal-subtitle">选择要执行的操作（已选择 {selectedPackages.length} 个运单）</p>
+            <h2>{t('centerReturn.issueInstruction')}</h2>
+            <p className="modal-subtitle">{t('centerReturn.selectOperation', { count: selectedPackages.length })}</p>
             <div className="modal-actions">
               <button
                 className="modal-action-button re-dispatch"
-                onClick={() => handleUpdateInstruction('re-dispatch', '重派')}
+                onClick={() => handleUpdateInstruction('re-dispatch', t('customerService.re-dispatch'))}
               >
                 <span className="action-icon">🚚</span>
-                <span>重派</span>
+                <span>{t('customerService.re-dispatch')}</span>
               </button>
               <button
                 className="modal-action-button re-dispatch-new"
-                onClick={() => handleUpdateInstruction('re-dispatch-new-label', '重派（新面单）')}
+                onClick={() => handleUpdateInstruction('re-dispatch-new-label', t('customerService.re-dispatch-new-label'))}
               >
                 <span className="action-icon">📋</span>
-                <span>重派（新面单）</span>
+                <span>{t('customerService.re-dispatch-new-label')}</span>
               </button>
               <button
                 className="modal-action-button return-customer"
-                onClick={() => handleUpdateInstruction('return-to-customer', '退回客户')}
+                onClick={() => handleUpdateInstruction('return-to-customer', t('customerService.return-to-customer'))}
               >
                 <span className="action-icon">↩️</span>
-                <span>退回客户</span>
+                <span>{t('customerService.return-to-customer')}</span>
               </button>
             </div>
             <button className="modal-close-button" onClick={() => setShowActionModal(false)}>
-              取消
+              {t('common.cancel')}
             </button>
           </div>
         </div>
@@ -765,87 +767,87 @@ function CenterReturnManagement() {
       {showManageModal && currentPackage && (
         <div className="modal-overlay" onClick={() => setShowManageModal(false)}>
           <div className="modal-content manage-modal" onClick={(e) => e.stopPropagation()}>
-            <h2>运单管理</h2>
-            <p className="modal-subtitle">修改状态和客服指令</p>
+            <h2>{t('centerReturn.packageManagement')}</h2>
+            <p className="modal-subtitle">{t('centerReturn.modifyStatus')}</p>
             
             <div className="manage-content">
               <div className="manage-info-row">
-                <span className="manage-label">运单号：</span>
+                <span className="manage-label">{t('centerReturn.packageNumber')}:</span>
                 <span className="manage-value">{currentPackage.package_number || currentPackage.packageNumber}</span>
               </div>
               <div className="manage-info-row">
-                <span className="manage-label">库位：</span>
+                <span className="manage-label">{t('centerReturn.location')}:</span>
                 <span className="manage-value">{currentPackage.location}</span>
               </div>
               <div className="manage-info-row">
-                <span className="manage-label">上架时间：</span>
+                <span className="manage-label">{t('centerReturn.shelvingTime')}:</span>
                 <span className="manage-value">{currentPackage.shelving_time_display || '-'}</span>
               </div>
               <div className="manage-info-row">
-                <span className="manage-label">下达指令时间：</span>
+                <span className="manage-label">{t('centerReturn.instructionTime')}:</span>
                 <span className="manage-value">{currentPackage.instruction_time_display || '-'}</span>
               </div>
               <div className="manage-info-row">
-                <span className="manage-label">下架时间：</span>
+                <span className="manage-label">{t('centerReturn.unshelvingTime')}:</span>
                 <span className="manage-value">{currentPackage.unshelving_time_display || '-'}</span>
               </div>
             </div>
 
             <div className="manage-edit-section">
-              <h3 className="section-title-small">修改状态</h3>
+              <h3 className="section-title-small">{t('centerReturn.modifyPackageStatus')}</h3>
               <div className="status-buttons">
                 <button
                   className={`status-edit-button ${(currentPackage.package_status || currentPackage.packageStatus) === 'in-warehouse' ? 'active' : ''}`}
                   onClick={() => handleUpdatePackage({ package_status: 'in-warehouse' })}
                 >
-                  在库内
+                  {t('packageStatus.in-warehouse')}
                 </button>
                 <button
                   className={`status-edit-button ${(currentPackage.package_status || currentPackage.packageStatus) === 'pending-removal' ? 'active' : ''}`}
                   onClick={() => handleUpdatePackage({ package_status: 'pending-removal' })}
                 >
-                  待下架
+                  {t('packageStatus.pending-removal')}
                 </button>
                 <button
                   className={`status-edit-button ${(currentPackage.package_status || currentPackage.packageStatus) === 'removed' ? 'active' : ''}`}
                   onClick={() => handleUpdatePackage({ package_status: 'removed' })}
                 >
-                  已下架
+                  {t('packageStatus.removed')}
                 </button>
               </div>
 
-              <h3 className="section-title-small">修改客服指令</h3>
+              <h3 className="section-title-small">{t('centerReturn.modifyCustomerService')}</h3>
               <div className="instruction-buttons">
                 <button
                   className={`instruction-edit-button ${(currentPackage.customer_service || currentPackage.customerService) === 're-dispatch' ? 'active' : ''}`}
                   onClick={() => handleUpdatePackage({ customer_service: 're-dispatch' })}
                 >
-                  重派
+                  {t('customerService.re-dispatch')}
                 </button>
                 <button
                   className={`instruction-edit-button ${(currentPackage.customer_service || currentPackage.customerService) === 're-dispatch-new-label' ? 'active' : ''}`}
                   onClick={() => handleUpdatePackage({ customer_service: 're-dispatch-new-label' })}
                 >
-                  重派（新面单）
+                  {t('customerService.re-dispatch-new-label')}
                 </button>
                 <button
                   className={`instruction-edit-button ${(currentPackage.customer_service || currentPackage.customerService) === 'return-to-customer' ? 'active' : ''}`}
                   onClick={() => handleUpdatePackage({ customer_service: 'return-to-customer' })}
                 >
-                  退回客户
+                  {t('customerService.return-to-customer')}
                 </button>
                 <button
                   className={`instruction-edit-button ${!(currentPackage.customer_service || currentPackage.customerService) ? 'active' : ''}`}
                   onClick={() => handleUpdatePackage({ customer_service: null })}
                 >
-                  清除指令
+                  {t('centerReturn.clearInstruction')}
                 </button>
               </div>
             </div>
 
             <div className="manage-actions">
               <button className="manage-close-button full-width" onClick={() => setShowManageModal(false)}>
-                关闭
+                {t('common.close')}
               </button>
             </div>
           </div>
