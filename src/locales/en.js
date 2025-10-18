@@ -59,10 +59,28 @@ export const en = {
 
   // Roles and Permissions
   roles: {
+    super_admin: 'Super Admin',
     admin: 'Admin',
     manager: 'Manager',
     user: 'User',
     role: 'Role',
+  },
+
+  // City Management
+  city: {
+    selectCity: 'Select City',
+    currentCity: 'Current City',
+    changeFailed: 'Failed to switch city',
+    mia: 'Miami',
+    wpb: 'West Palm Beach',
+    ftm: 'Fort Myers',
+    mco: 'Orlando',
+    tpa: 'Tampa',
+    allCities: 'All Cities',
+    cityPermissions: 'City Permissions',
+    assignCities: 'Assign Cities',
+    selectCities: 'Select Cities',
+    noCityAccess: 'No city access permission',
   },
 
   // User Management

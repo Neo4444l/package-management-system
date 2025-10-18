@@ -59,10 +59,28 @@ export const zh = {
 
   // 角色和权限
   roles: {
+    super_admin: '超级管理员',
     admin: '管理员',
     manager: '经理',
     user: '普通用户',
     role: '角色',
+  },
+
+  // 城市管理
+  city: {
+    selectCity: '选择城市',
+    currentCity: '当前城市',
+    changeFailed: '切换城市失败',
+    mia: '迈阿密',
+    wpb: '西棕榈滩',
+    ftm: '迈尔斯堡',
+    mco: '奥兰多',
+    tpa: '坦帕',
+    allCities: '所有城市',
+    cityPermissions: '城市权限',
+    assignCities: '分配城市',
+    selectCities: '选择城市',
+    noCityAccess: '无城市访问权限',
   },
 
   // 用户管理

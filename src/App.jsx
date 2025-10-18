@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import { useLanguage } from './contexts/LanguageContext'
+import CitySelector from './components/CitySelector'
 import Login from './components/Login'
 import ResetPassword from './components/ResetPassword'
 import UserManagement from './components/UserManagement'
@@ -66,6 +67,7 @@ function App() {
 
   const getRoleBadge = (role) => {
     const badges = {
+      super_admin: { text: t('roles.super_admin'), class: 'role-super-admin' },
       admin: { text: t('roles.admin'), class: 'role-admin' },
       manager: { text: t('roles.manager'), class: 'role-manager' },
       user: { text: t('roles.user'), class: 'role-user' }
@@ -112,11 +114,14 @@ function App() {
                       {getRoleBadge(userRole).text}
                     </span>
                   )}
-                  {userRole === 'admin' && (
+                  {(userRole === 'admin' || userRole === 'super_admin') && (
                     <a href="/user-management" className="btn-manage-users">
                       👥 {t('userManagement.title')}
                     </a>
                   )}
+                  
+                  {/* 城市选择器 */}
+                  <CitySelector />
                   
                   {/* 语言切换按钮 */}
                   <div className="lang-switcher-app">
