@@ -15,7 +15,7 @@ import CenterReturnManagement from './pages/CenterReturnManagement'
 import './App.css'
 
 function App() {
-  const { t } = useLanguage()
+  const { t, language, changeLanguage } = useLanguage()
   const [session, setSession] = useState(null)
   const [userRole, setUserRole] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -117,6 +117,25 @@ function App() {
                       👥 {t('userManagement.title')}
                     </a>
                   )}
+                  
+                  {/* 语言切换按钮 */}
+                  <div className="lang-switcher-app">
+                    <button
+                      className={`lang-btn-app ${language === 'zh' ? 'active' : ''}`}
+                      onClick={() => changeLanguage('zh')}
+                      title="中文"
+                    >
+                      中
+                    </button>
+                    <button
+                      className={`lang-btn-app ${language === 'en' ? 'active' : ''}`}
+                      onClick={() => changeLanguage('en')}
+                      title="English"
+                    >
+                      EN
+                    </button>
+                  </div>
+                  
                   <button onClick={handleLogout} className="btn-logout">
                     {t('auth.logout')}
                   </button>

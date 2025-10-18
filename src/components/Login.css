@@ -17,36 +17,45 @@
   position: relative;
 }
 
-.language-switcher {
-  position: absolute;
-  top: 15px;
-  right: 15px;
+/* 底部语言切换器 */
+.language-switcher-bottom {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
   display: flex;
-  gap: 5px;
-  z-index: 10;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
 }
 
-.lang-btn {
-  padding: 6px 12px;
-  border: 2px solid #e0e0e0;
-  background: white;
-  color: #666;
-  border-radius: 6px;
+.lang-btn-bottom {
+  background: none;
+  border: none;
+  color: #999;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
-  transition: all 0.3s;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.lang-btn:hover {
-  border-color: #667eea;
+.lang-btn-bottom:hover {
   color: #667eea;
+  background: rgba(102, 126, 234, 0.05);
 }
 
-.lang-btn.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-color: transparent;
+.lang-btn-bottom.active {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.lang-divider {
+  color: #e0e0e0;
+  font-weight: 300;
 }
 
 .login-box h1 {

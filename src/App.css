@@ -111,6 +111,39 @@
   transform: translateY(0);
 }
 
+/* 语言切换按钮（App用户栏） */
+.lang-switcher-app {
+  display: flex;
+  gap: 4px;
+  background: rgba(102, 126, 234, 0.05);
+  padding: 4px;
+  border-radius: 12px;
+}
+
+.lang-btn-app {
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #666;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 32px;
+}
+
+.lang-btn-app:hover {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+}
+
+.lang-btn-app.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .user-info {
@@ -144,6 +177,16 @@
   .btn-logout {
     padding: 6px 12px;
     font-size: 11px;
+  }
+
+  .lang-switcher-app {
+    padding: 3px;
+  }
+
+  .lang-btn-app {
+    padding: 4px 8px;
+    font-size: 10px;
+    min-width: 28px;
   }
 }
 

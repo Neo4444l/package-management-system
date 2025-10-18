@@ -72,22 +72,6 @@ export default function Login({ onLogin }) {
     return (
       <div className="login-container">
         <div className="login-box">
-          {/* 语言切换按钮 */}
-          <div className="language-switcher">
-            <button
-              className={`lang-btn ${language === 'zh' ? 'active' : ''}`}
-              onClick={() => changeLanguage('zh')}
-            >
-              中文
-            </button>
-            <button
-              className={`lang-btn ${language === 'en' ? 'active' : ''}`}
-              onClick={() => changeLanguage('en')}
-            >
-              English
-            </button>
-          </div>
-
           <h1>📦 {t('app.title')}</h1>
           <h2>{t('auth.forgotPassword')}</h2>
           <p className="reset-description">
@@ -126,6 +110,23 @@ export default function Login({ onLogin }) {
               </button>
             </p>
           </div>
+
+          {/* 语言切换 - 底部 */}
+          <div className="language-switcher-bottom">
+            <button
+              className={`lang-btn-bottom ${language === 'zh' ? 'active' : ''}`}
+              onClick={() => changeLanguage('zh')}
+            >
+              🌐 中文
+            </button>
+            <span className="lang-divider">|</span>
+            <button
+              className={`lang-btn-bottom ${language === 'en' ? 'active' : ''}`}
+              onClick={() => changeLanguage('en')}
+            >
+              🌐 English
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -134,22 +135,6 @@ export default function Login({ onLogin }) {
   return (
     <div className="login-container">
       <div className="login-box">
-        {/* 语言切换按钮 */}
-        <div className="language-switcher">
-          <button
-            className={`lang-btn ${language === 'zh' ? 'active' : ''}`}
-            onClick={() => changeLanguage('zh')}
-          >
-            中文
-          </button>
-          <button
-            className={`lang-btn ${language === 'en' ? 'active' : ''}`}
-            onClick={() => changeLanguage('en')}
-          >
-            English
-          </button>
-        </div>
-
         <h1>📦 {t('app.title')}</h1>
         <h2>{t('auth.login')}</h2>
         
@@ -195,6 +180,23 @@ export default function Login({ onLogin }) {
           <p className="admin-note">
             {t('auth.newUserContact')}
           </p>
+        </div>
+
+        {/* 语言切换 - 底部 */}
+        <div className="language-switcher-bottom">
+          <button
+            className={`lang-btn-bottom ${language === 'zh' ? 'active' : ''}`}
+            onClick={() => changeLanguage('zh')}
+          >
+            🌐 中文
+          </button>
+          <span className="lang-divider">|</span>
+          <button
+            className={`lang-btn-bottom ${language === 'en' ? 'active' : ''}`}
+            onClick={() => changeLanguage('en')}
+          >
+            🌐 English
+          </button>
         </div>
       </div>
     </div>
