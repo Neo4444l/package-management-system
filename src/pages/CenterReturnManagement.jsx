@@ -47,20 +47,12 @@ function CenterReturnManagement() {
           schema: 'public',
           table: 'packages'
         },
-        (payload) => {
+        async (payload) => {
           console.log('📦 包裹数据变化（中心退回管理）：', payload)
           
-          if (payload.eventType === 'INSERT') {
-            // 新增包裹
-            setPackages(prev => {
-              if (prev.some(p => p.id === payload.new.id)) return prev
-              return [payload.new, ...prev]
-            })
-          } else if (payload.eventType === 'UPDATE') {
-            // 包裹更新
-            setPackages(prev => prev.map(p => 
-              p.id === payload.new.id ? payload.new : p
-            ))
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            // 重新加载完整数据以获取用户名
+            await loadPackages()
           } else if (payload.eventType === 'DELETE') {
             // 包裹删除
             setPackages(prev => prev.filter(p => p.id !== payload.old.id))
@@ -97,52 +89,70 @@ function CenterReturnManagement() {
 
   const loadPackages = async () => {
     try {
-      // 直接使用Supabase查询来获取用户名
-      const { data: allPackages, error } = await supabase
+      // 先获取所有包裹
+      const { data: allPackages, error: packagesError } = await supabase
         .from('packages')
-        .select(`
-          *,
-          last_modified_by_profile:profiles!last_modified_by (
-            username,
-            email
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (packagesError) throw packagesError
+
+      // 获取所有唯一的用户ID
+      const userIds = [...new Set(allPackages.map(pkg => pkg.last_modified_by).filter(Boolean))]
+      
+      // 批量获取用户信息
+      let userMap = {}
+      if (userIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, email')
+          .in('id', userIds)
+        
+        if (!profilesError && profiles) {
+          userMap = profiles.reduce((acc, profile) => {
+            acc[profile.id] = profile
+            return acc
+          }, {})
+        }
+      }
 
       // 格式化时间字段和用户名
-      const packagesWithFormattedTime = (allPackages || []).map(pkg => ({
-        ...pkg,
-        last_modified_by_username: pkg.last_modified_by_profile?.username || '-',
-        shelving_time_display: pkg.shelving_time ? new Date(pkg.shelving_time).toLocaleString('zh-CN', { 
-          year: 'numeric', 
-          month: '2-digit', 
-          day: '2-digit', 
-          hour: '2-digit', 
-          minute: '2-digit', 
-          second: '2-digit',
-          hour12: false 
-        }).replace(/\//g, '-') : '-',
-        unshelving_time_display: pkg.unshelving_time ? new Date(pkg.unshelving_time).toLocaleString('zh-CN', { 
-          year: 'numeric', 
-          month: '2-digit', 
-          day: '2-digit', 
-          hour: '2-digit', 
-          minute: '2-digit', 
-          second: '2-digit',
-          hour12: false 
-        }).replace(/\//g, '-') : '-',
-        instruction_time_display: pkg.instruction_time ? new Date(pkg.instruction_time).toLocaleString('zh-CN', { 
-          year: 'numeric', 
-          month: '2-digit', 
-          day: '2-digit', 
-          hour: '2-digit', 
-          minute: '2-digit', 
-          second: '2-digit',
-          hour12: false 
-        }).replace(/\//g, '-') : '-'
-      }))
+      const packagesWithFormattedTime = (allPackages || []).map(pkg => {
+        const userProfile = pkg.last_modified_by ? userMap[pkg.last_modified_by] : null
+        
+        return {
+          ...pkg,
+          last_modified_by_username: userProfile?.username || userProfile?.email || '-',
+          shelving_time_display: pkg.shelving_time ? new Date(pkg.shelving_time).toLocaleString('zh-CN', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit',
+            hour12: false 
+          }).replace(/\//g, '-') : '-',
+          unshelving_time_display: pkg.unshelving_time ? new Date(pkg.unshelving_time).toLocaleString('zh-CN', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit',
+            hour12: false 
+          }).replace(/\//g, '-') : '-',
+          instruction_time_display: pkg.instruction_time ? new Date(pkg.instruction_time).toLocaleString('zh-CN', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit',
+            hour12: false 
+          }).replace(/\//g, '-') : '-'
+        }
+      })
+      
       setPackages(packagesWithFormattedTime)
       
       // 提取所有唯一的库位号

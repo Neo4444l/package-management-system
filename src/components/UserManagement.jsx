@@ -172,22 +172,31 @@ export default function UserManagement() {
       if (!confirmed) return
 
       // 从profiles表删除用户
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('profiles')
         .delete()
         .eq('id', userId)
+        .select()
 
-      if (error) throw error
+      if (error) {
+        console.error('删除错误详情:', error)
+        throw error
+      }
 
-      // 立即从state中移除该用户，确保UI立即更新
+      // 验证删除是否成功 - 立即从state中移除该用户
       setUsers(prevUsers => prevUsers.filter(u => u.id !== userId))
       
       setSuccess(`用户"${user?.username || userEmail}"已成功删除！`)
       
-      // 同时刷新数据以确保数据一致性
-      await fetchUsers()
+      // 3秒后清除成功消息
+      setTimeout(() => {
+        setSuccess('')
+      }, 3000)
     } catch (error) {
+      console.error('删除用户失败:', error)
       setError('删除失败：' + error.message)
+      // 如果删除失败，刷新列表以恢复正确状态
+      await fetchUsers()
     }
   }
 

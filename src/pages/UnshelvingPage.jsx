@@ -34,40 +34,15 @@ function UnshelvingPage() {
           schema: 'public',
           table: 'packages'
         },
-        (payload) => {
+        async (payload) => {
           console.log('📦 包裹数据变化（下架页面）：', payload)
           
-          if (payload.eventType === 'INSERT') {
-            // 新增包裹
-            const newPkg = payload.new
-            if ((newPkg.package_status || newPkg.packageStatus) === PENDING_REMOVAL_STATUS) {
-              setPackages(prev => {
-                if (prev.some(p => p.id === newPkg.id)) return prev
-                return [newPkg, ...prev]
-              })
-              // 不再立即调用 updateGroupedPackages()，让 useEffect 处理
-            }
-          } else if (payload.eventType === 'UPDATE') {
-            // 包裹状态更新
-            const updatedPkg = payload.new
-            if ((updatedPkg.package_status || updatedPkg.packageStatus) === PENDING_REMOVAL_STATUS) {
-              // 更新为待下架状态，添加到列表
-              setPackages(prev => {
-                const existing = prev.find(p => p.id === updatedPkg.id)
-                if (existing) {
-                  return prev.map(p => p.id === updatedPkg.id ? updatedPkg : p)
-                }
-                return [updatedPkg, ...prev]
-              })
-            } else {
-              // 不是待下架状态，从列表移除
-              setPackages(prev => prev.filter(p => p.id !== updatedPkg.id))
-            }
-            // 不再立即调用 updateGroupedPackages()，让 useEffect 处理
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            // 重新加载数据以确保获取最新信息
+            await loadPackages()
           } else if (payload.eventType === 'DELETE') {
             // 包裹被删除
             setPackages(prev => prev.filter(p => p.id !== payload.old.id))
-            // 不再立即调用 updateGroupedPackages()，让 useEffect 处理
           }
         }
       )

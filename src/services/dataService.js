@@ -90,6 +90,7 @@ export async function getPackagesByLocation(location) {
 export async function addPackage(packageData) {
   try {
     const { data: { user } } = await supabase.auth.getUser()
+    const now = new Date().toISOString()
     
     const { data, error } = await supabase
       .from('packages')
@@ -99,8 +100,10 @@ export async function addPackage(packageData) {
         location: packageData.location,
         package_status: packageData.packageStatus || 'in-warehouse',
         customer_service: packageData.customerService || null,
-        shelving_time: new Date().toISOString(),
-        status_history: packageData.statusHistory || []
+        shelving_time: now,
+        status_history: packageData.statusHistory || [],
+        last_modified_by: user?.id,
+        last_modified_at: now
       }])
       .select()
     
@@ -117,9 +120,20 @@ export async function addPackage(packageData) {
  */
 export async function updatePackage(id, updates) {
   try {
+    // 获取当前用户
+    const { data: { user } } = await supabase.auth.getUser()
+    const now = new Date().toISOString()
+    
+    // 自动添加操作用户和时间（如果调用者没有传入）
+    const updatesWithUser = {
+      ...updates,
+      last_modified_by: updates.last_modified_by || user?.id,
+      last_modified_at: updates.last_modified_at || now
+    }
+    
     const { data, error } = await supabase
       .from('packages')
-      .update(updates)
+      .update(updatesWithUser)
       .eq('id', id)
       .select()
     
@@ -175,11 +189,16 @@ export async function searchPackages(searchTerm) {
  */
 export async function unshelvingPackage(packageNumber) {
   try {
+    const { data: { user } } = await supabase.auth.getUser()
+    const now = new Date().toISOString()
+    
     const { data, error } = await supabase
       .from('packages')
       .update({
         package_status: 'removed',
-        unshelving_time: new Date().toISOString()
+        unshelving_time: now,
+        last_modified_by: user?.id,
+        last_modified_at: now
       })
       .eq('package_number', packageNumber)
       .select()
@@ -197,9 +216,19 @@ export async function unshelvingPackage(packageNumber) {
  */
 export async function batchUpdatePackages(packageIds, updates) {
   try {
+    const { data: { user } } = await supabase.auth.getUser()
+    const now = new Date().toISOString()
+    
+    // 自动添加操作用户和时间
+    const updatesWithUser = {
+      ...updates,
+      last_modified_by: updates.last_modified_by || user?.id,
+      last_modified_at: updates.last_modified_at || now
+    }
+    
     const { data, error } = await supabase
       .from('packages')
-      .update(updates)
+      .update(updatesWithUser)
       .in('id', packageIds)
       .select()
     
