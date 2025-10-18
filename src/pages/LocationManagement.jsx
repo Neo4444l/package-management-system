@@ -42,7 +42,21 @@ function LocationManagement() {
               if (prev.some(l => l.id === payload.new.id)) {
                 return prev
               }
-              return [...prev, payload.new]
+              // 格式化新库位的日期
+              const newLocation = {
+                ...payload.new,
+                created_at_display: payload.new.created_at 
+                  ? new Date(payload.new.created_at).toLocaleString('zh-CN', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: false
+                    }).replace(/\//g, '-')
+                  : '-'
+              }
+              return [...prev, newLocation]
             })
             showNotification(`📍 ${t('locationManagement.newLocationAdded')}: ${payload.new.code}`, 'info')
           } else if (payload.eventType === 'DELETE') {
@@ -64,7 +78,21 @@ function LocationManagement() {
   const loadLocations = async () => {
     try {
       const allLocations = await getAllLocations()
-      setLocations(allLocations)
+      // 格式化日期显示
+      const locationsWithFormattedDate = allLocations.map(loc => ({
+        ...loc,
+        created_at_display: loc.created_at 
+          ? new Date(loc.created_at).toLocaleString('zh-CN', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+            }).replace(/\//g, '-')
+          : '-'
+      }))
+      setLocations(locationsWithFormattedDate)
     } catch (error) {
       console.error('Error loading locations:', error)
       showNotification(t('messages.loadingFailed'), 'error')
@@ -94,7 +122,22 @@ function LocationManagement() {
       // 保存到 Supabase
       const newLocation = await addLocation(locationInput.trim())
 
-      const updatedLocations = [...locations, newLocation]
+      // 格式化日期
+      const formattedLocation = {
+        ...newLocation,
+        created_at_display: newLocation.created_at 
+          ? new Date(newLocation.created_at).toLocaleString('zh-CN', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+            }).replace(/\//g, '-')
+          : '-'
+      }
+
+      const updatedLocations = [...locations, formattedLocation]
       setLocations(updatedLocations)
       
       setLocationInput('')
@@ -225,20 +268,25 @@ function LocationManagement() {
           }
           .qr-item canvas {
             display: block;
-            margin-bottom: 1cm;
+            margin: 0 auto 0.8cm auto;
             /* 二维码占标签宽度的60% */
             width: 9cm !important;
             height: 9cm !important;
           }
           .qr-code {
-            font-size: 32px;
+            font-size: 36px;
             font-weight: bold;
-            margin-bottom: 8px;
+            margin-bottom: 0.4cm;
             color: #000;
+            text-align: center;
+            width: 100%;
+            letter-spacing: 2px;
           }
           .qr-date {
-            font-size: 14px;
+            font-size: 16px;
             color: #666;
+            text-align: center;
+            width: 100%;
           }
           @media print {
             @page {
@@ -288,7 +336,18 @@ function LocationManagement() {
 
       const dateDiv = printWindow.document.createElement('div')
       dateDiv.className = 'qr-date'
-      dateDiv.textContent = `${t('locationManagement.createdTime')}: ${location.created_at_display || location.createdAtDisplay}`
+      // 确保日期显示正确
+      const displayDate = location.created_at_display || 
+                         location.createdAtDisplay || 
+                         (location.created_at ? new Date(location.created_at).toLocaleString('zh-CN', {
+                           year: 'numeric',
+                           month: '2-digit',
+                           day: '2-digit',
+                           hour: '2-digit',
+                           minute: '2-digit',
+                           hour12: false
+                         }).replace(/\//g, '-') : '-')
+      dateDiv.textContent = `${t('locationManagement.createdTime')}: ${displayDate}`
 
       qrItem.appendChild(canvas)
       qrItem.appendChild(codeDiv)
