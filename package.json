@@ -1,7 +1,7 @@
 {
-  "name": "package-management-system",
+  "name": "return-package-management-system",
   "version": "1.0.0",
-  "description": "包裹管理系统 - 上架、下架、退件看板",
+  "description": "退回包裹管理系统 - 上架、下架、退件看板",
   "private": true,
   "scripts": {
     "dev": "vite",

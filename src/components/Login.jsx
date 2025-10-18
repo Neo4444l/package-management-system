@@ -91,7 +91,7 @@ export default function Login({ onLogin }) {
     return (
       <div className="login-container">
         <div className="login-box">
-          <h1>📦 包裹管理系统</h1>
+          <h1>📦 退回包裹管理系统</h1>
           <h2>修改密码</h2>
           
           <form onSubmit={handleChangePassword}>
@@ -172,7 +172,7 @@ export default function Login({ onLogin }) {
   return (
     <div className="login-container">
       <div className="login-box">
-        <h1>📦 包裹管理系统</h1>
+        <h1>📦 退回包裹管理系统</h1>
         <h2>登录</h2>
         
         <form onSubmit={handleLogin}>

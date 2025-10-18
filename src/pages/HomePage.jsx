@@ -38,8 +38,8 @@ function HomePage() {
     <div className="home-page">
       <div className="home-container">
         <header className="home-header">
-          <h1 className="home-title">包裹管理系统</h1>
-          <p className="home-subtitle">Package Management System</p>
+          <h1 className="home-title">退回包裹管理系统</h1>
+          <p className="home-subtitle">Return Package Management System</p>
         </header>
 
         <div className="modules-grid">
@@ -59,7 +59,7 @@ function HomePage() {
         </div>
 
         <footer className="home-footer">
-          <p>&copy; 2025 包裹管理系统_版本{version}. All rights reserved.</p>
+          <p>&copy; 2025 退回包裹管理系统_版本{version}. All rights reserved.</p>
         </footer>
       </div>
     </div>
