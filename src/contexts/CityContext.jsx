@@ -189,16 +189,26 @@ export const CityProvider = ({ children }) => {
   }
 
   const hasMultipleCities = () => {
-    return userCities.length > 1 || userRole === 'super_admin'
+    // Super Admin 可以访问所有城市，视为有多个城市
+    if (userRole === 'super_admin') {
+      return AVAILABLE_CITIES.length > 1
+    }
+    // 普通用户：检查实际拥有的城市数量
+    return userCities && userCities.length > 1
   }
 
   const canAccessCity = (cityCode) => {
-    return userCities.includes(cityCode) || userRole === 'super_admin'
+    // Super Admin 可以访问所有城市
+    if (userRole === 'super_admin') {
+      return true
+    }
+    // 普通用户：检查是否在授权的城市列表中
+    return userCities && userCities.includes(cityCode)
   }
 
   const value = {
     currentCity,
-    userCities,
+    userCities: userCities || [],  // 确保不为 null/undefined
     userRole,
     loading,
     changeCity,
@@ -206,7 +216,14 @@ export const CityProvider = ({ children }) => {
     hasMultipleCities,
     canAccessCity,
     availableCities: AVAILABLE_CITIES,
-    isSuperAdmin: userRole === 'super_admin'
+    isSuperAdmin: userRole === 'super_admin',
+    // 添加一个辅助方法：获取用户实际可访问的城市列表
+    getAccessibleCities: () => {
+      if (userRole === 'super_admin') {
+        return AVAILABLE_CITIES
+      }
+      return AVAILABLE_CITIES.filter(city => userCities && userCities.includes(city.code))
+    }
   }
 
   if (loading) {

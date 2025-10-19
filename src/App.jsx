@@ -149,7 +149,7 @@ function App() {
                             </a>
                           )}
                           
-                          {/* 城市选择 */}
+                          {/* 城市选择 - 仅在有多个城市权限时显示 */}
                           {userCities && userCities.length > 1 && (
                             <div className="menu-section">
                               <div className="menu-section-title">
@@ -158,7 +158,7 @@ function App() {
                               </div>
                               <div className="city-list">
                                 {availableCities
-                                  .filter(city => userCities.includes(city.code))
+                                  .filter(city => userCities && userCities.includes(city.code))
                                   .map(city => (
                                     <button
                                       key={city.code}

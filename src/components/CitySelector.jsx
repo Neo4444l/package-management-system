@@ -4,7 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 import './CitySelector.css'
 
 function CitySelector() {
-  const { currentCity, userCities, changeCity, getCityName, hasMultipleCities, availableCities, isSuperAdmin } = useCity()
+  const { currentCity, changeCity, getCityName, hasMultipleCities, getAccessibleCities } = useCity()
   const { t, language } = useLanguage()
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -38,10 +38,8 @@ function CitySelector() {
     }
   }
 
-  // 获取用户可访问的城市列表
-  const accessibleCities = isSuperAdmin 
-    ? availableCities 
-    : availableCities.filter(city => userCities.includes(city.code))
+  // 获取用户可访问的城市列表（使用统一的方法）
+  const accessibleCities = getAccessibleCities()
 
   return (
     <div className="city-selector">
@@ -61,9 +59,6 @@ function CitySelector() {
           <div className="city-dropdown">
             <div className="city-dropdown-header">
               {t('city.selectCity')}
-              {isSuperAdmin && (
-                <span className="super-admin-badge">{t('roles.super_admin')}</span>
-              )}
             </div>
             <div className="city-list">
               {accessibleCities.map(city => (
