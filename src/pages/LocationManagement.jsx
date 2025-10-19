@@ -257,11 +257,16 @@ function LocationManagement() {
           body {
             font-family: Arial, sans-serif;
             padding: 10mm;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
           }
           .qr-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 10mm;
+            width: 100%;
           }
           /* 每个二维码占据 15cm x 10cm 的标签，二维码占60% */
           .qr-item {
@@ -277,7 +282,7 @@ function LocationManagement() {
           }
           .qr-item canvas {
             display: block;
-            margin: 0 auto 0.8cm auto;
+            margin: 0 auto 0.5cm auto;
             /* 二维码占标签宽度的60% */
             width: 9cm !important;
             height: 9cm !important;
@@ -285,7 +290,7 @@ function LocationManagement() {
           .qr-code {
             font-size: 36px;
             font-weight: bold;
-            margin-bottom: 0.4cm;
+            margin: 0.3cm 0;
             color: #000;
             text-align: center;
             width: 100%;
@@ -296,6 +301,7 @@ function LocationManagement() {
             color: #666;
             text-align: center;
             width: 100%;
+            margin-top: 0.2cm;
           }
           @media print {
             @page {
@@ -304,6 +310,8 @@ function LocationManagement() {
             }
             body {
               padding: 0;
+              display: block;
+              min-height: auto;
             }
             .qr-item {
               border: none;
