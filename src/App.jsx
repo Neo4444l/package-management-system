@@ -130,19 +130,21 @@ function App() {
                       <span className="btn-icon">👤</span>
                       <div className="btn-content">
                         <span className="btn-label">{username}</span>
-                        {userRole && (
-                          <span className={`btn-sublabel ${getRoleBadge(userRole).class}`}>
-                            {getRoleBadge(userRole).text}
-                          </span>
-                        )}
-                        {/* 显示当前城市 */}
-                        {currentCity && (
-                          <span className="btn-sublabel city-label">
-                            <span className="city-icon-small">🏙️</span>
-                            {getCityName(currentCity, language)}
-                            {!hasMultipleCities() && <span className="city-lock-icon">🔒</span>}
-                          </span>
-                        )}
+                        {/* 角色和城市标签横向排列 */}
+                        <div className="btn-tags">
+                          {userRole && (
+                            <span className={`btn-sublabel ${getRoleBadge(userRole).class}`}>
+                              {getRoleBadge(userRole).text}
+                            </span>
+                          )}
+                          {currentCity && (
+                            <span className="btn-sublabel city-label">
+                              <span className="city-icon-small">🏙️</span>
+                              {getCityName(currentCity, language)}
+                              {!hasMultipleCities() && <span className="city-lock-icon">🔒</span>}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <span className="btn-arrow">▼</span>
                     </button>
