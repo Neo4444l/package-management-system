@@ -1,310 +1,461 @@
-# 退回包裹管理系统
+# 🚀 退回包裹管理系统
 
-一个用于管理退回包裹上架、下架和退件的现代化Web应用。
+一个现代化的、多城市支持的、国际化的退回包裹管理Web应用。
 
-## 功能模块
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed-Vercel-black)](https://vercel.com)
+[![Database](https://img.shields.io/badge/Database-Supabase-3ECF8E)](https://supabase.com)
+[![Framework](https://img.shields.io/badge/Framework-React%2018-61DAFB)](https://react.dev)
+[![Language](https://img.shields.io/badge/Language-中文%20%7C%20English-blue)](./docs/国际化-完成总结.md)
 
-### ✅ 已完成
+---
 
-#### 1. 上架功能
-  - 从库位管理中选择库位号
-  - 输入包裹号并记录上架时间
-  - 查看已上架包裹列表
-  - 删除包裹记录
-  - 导出数据为CSV格式
+## ✨ 核心特性
 
-#### 2. 下架功能
-  - 显示待下架运单（状态为"待下架"）
-  - 按库位分类显示
-  - 显示客服指令信息
-  - 扫描或输入运单号进行匹配
-  - 匹配成功后强提醒（声音+视觉）
-  - 显示运单完整信息
-  - 确认下架后标记为"已下架"（不删除数据）
+### 🏙️ **多城市支持**
+- 支持 5 个城市独立运营：MIA, WPB, FTM, MCO, TPA
+- 城市级数据完全隔离
+- Super Admin 可分配城市权限
+- 一键城市切换
 
-#### 3. 退件看板
-  
-  **库位管理**
-  - 添加和删除库位号
-  - 批量选择库位
-  - 生成和打印库位二维码
-  - 库位创建时间记录
-  
-  **中心退回管理**
-  - 查询所有运单记录
-  - 双维度分类显示：
-    - **状态维度**: 全部/在库内/待下架/已下架
-    - **客服指令**: 重派/重派（新面单）/退回客户
-  - 搜索功能（运单号/库位号）
-  - 时间筛选（上架时间/下架时间/下达指令时间）
-  - 批量选择运单
-  - 指令下达（自动更新为待下架状态）
-  - 运单详情管理（查看和删除）
-  - 完整的时间记录（上架/下架/指令）
+### 🌍 **国际化 (i18n)**
+- 中文 / English 双语支持
+- 登录界面语言切换
+- 应用内实时语言切换
+- 所有模块完整翻译
 
-## 技术栈
+### 👥 **用户权限管理**
+- 4 种角色：Super Admin / Admin / Manager / User
+- 基于角色的访问控制 (RBAC)
+- 邮箱验证和密码重置
+- 用户状态管理（激活/停用）
 
-- **前端框架**: React 18
-- **路由**: React Router 6
-- **构建工具**: Vite
-- **数据存储**: LocalStorage（可升级为后端API）
-- **样式**: 纯CSS（现代化渐变设计）
+### 📦 **包裹管理**
+- **上架管理**：库位选择、包裹录入、批量操作
+- **下架管理**：扫码下架、状态更新、实时提醒
+- **中心退回**：多维度查询、指令下达、批量处理
+- **库位管理**：二维码生成、批量打印、创建时间记录
 
-## 安装和运行
+### ⚡ **实时数据同步**
+- Supabase Realtime 实时订阅
+- 多端数据即时同步
+- 操作记录实时更新
+- 最后操作用户追踪
 
-### 方法一：使用启动菜单（推荐）
+---
 
-1. **双击运行** `启动.bat`
-2. 选择 `[1] 一键安装并启动`
-3. 等待安装完成，浏览器会自动打开
+## 🛠️ 技术栈
 
-### 方法二：手动命令行
+### 前端
+- **React 18** - UI 框架
+- **React Router 6** - 路由管理
+- **Vite** - 构建工具
+- **CSS3** - 现代化渐变设计
 
-1. **安装依赖**
+### 后端
+- **Supabase** - Backend as a Service
+  - PostgreSQL 数据库
+  - Row Level Security (RLS)
+  - Realtime 实时订阅
+  - 用户认证 (Auth)
+  - 邮件服务
+
+### 部署
+- **Vercel** - 前端托管
+- **Supabase Cloud** - 数据库和后端
+
+---
+
+## 📚 文档导航
+
+### 🚀 快速开始
+- **[使用教程](./docs/使用教程.md)** - 完整的系统使用指南
+- **[数据结构说明](./docs/数据结构说明.md)** - 数据库结构详解
+
+### 🔧 配置指南
+- **[Supabase 数据库创建教程](./docs/Supabase数据库创建详细教程.md)** - 数据库初始化
+- **[密码重置配置教程](./docs/Supabase密码重置配置详细教程.md)** - 邮件重置配置
+- **[实时数据同步指南](./docs/实时数据同步实施指南.md)** - Realtime 配置
+- **[用户登录系统指南](./docs/用户登录系统实施指南.md)** - 认证系统配置
+
+### 🌍 国际化
+- **[国际化完成总结](./docs/国际化-完成总结.md)** - 功能完整说明
+- **[国际化实施进度](./docs/国际化-实施进度.md)** - 实施追踪
+- **[国际化快速参考](./docs/国际化-快速参考.md)** - 快速参考
+
+### 🏙️ 多城市系统
+- **[第1阶段总结](./docs/多城市系统-实施总结-第1阶段.md)** - 数据库和架构
+- **[第2阶段总结](./docs/多城市系统-实施总结-第2阶段-完整版.md)** - 完整实施
+
+### 🐛 Bug 修复记录
+- **[用户管理功能说明](./docs/用户管理和密码重置功能说明.md)**
+- **[最后操作用户显示修复](./docs/最后操作用户显示-修复说明.md)**
+- **[库位二维码打印修复](./docs/库位二维码打印-修复说明.md)**
+- **[死循环修复](./docs/立即操作-修复死循环.md)**
+
+📖 **[查看完整文档目录](./docs/README.md)**
+
+---
+
+## 🚀 快速开始
+
+### 前置要求
+- Node.js 16+ 
+- npm 或 yarn
+- Supabase 账号（免费）
+
+### 1. 克隆项目
+```bash
+git clone <repository-url>
+cd 退回包裹管理系统
+```
+
+### 2. 安装依赖
 ```bash
 npm install
 ```
 
-2. **启动开发服务器**
+### 3. 配置环境变量
+创建 `.env` 文件：
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### 4. 配置数据库
+在 Supabase SQL Editor 中执行：
+```bash
+database/supabase-setup.sql
+database/权限管理系统-完整SQL.sql
+database/多城市系统-完整配置.sql
+```
+
+详见：[多城市系统-快速执行.md](./database/多城市系统-快速执行.md)
+
+### 5. 启动开发服务器
 ```bash
 npm run dev
 ```
 
-应用将在 `http://localhost:3000` 自动打开。
+应用将在 `http://localhost:5173` 启动。
 
-3. **构建生产版本**
+### 6. 构建生产版本
 ```bash
 npm run build
 ```
 
-## 使用说明
+---
 
-### 首次使用流程
+## 📦 功能模块
 
-1. **设置库位**
-   - 首页点击"退件看板"
-   - 进入"库位管理"
-   - 添加库位号（如：A-01, A-02, B-01等）
-   - （可选）选择库位并打印二维码
+### 1️⃣ 上架管理 (Shelving)
+- 📍 选择库位号
+- 📦 扫码录入包裹号
+- ⏰ 自动记录时间和操作人
+- 📊 包裹列表查看
+- 🗑️ 删除和导出功能
 
-2. **开始上架**
-   - 返回首页，点击"上架"
-   - 选择库位号
-   - 输入包裹号
-   - 系统自动记录时间
+### 2️⃣ 下架管理 (Unshelving)
+- 🔍 显示待下架运单
+- 📍 按库位分类显示
+- 📱 扫码匹配包裹
+- ✅ 确认下架更新状态
+- 🔊 匹配成功声音+视觉提醒
 
-3. **管理运单**
-   - 进入"退件看板" → "中心退回管理"
-   - 查看所有运单
-   - 按状态分类查询
-   - 下达指令（重派、退回客户等）
+### 3️⃣ 中心退回管理 (Center Return)
+- 🔍 多维度搜索（运单号/库位号）
+- 📊 状态分类查看
+  - 全部/在库内/待下架/已下架
+- 📋 客服指令管理
+  - 重派/重派（新面单）/退回客户
+- ⏱️ 时间筛选（上架/下架/指令）
+- ✅ 批量选择和操作
+- 👤 最后操作用户追踪
 
-### 详细功能说明
+### 4️⃣ 库位管理 (Location Management)
+- ➕ 添加和删除库位
+- 🏷️ 批量选择库位
+- 📱 生成二维码
+- 🖨️ 批量打印（15cm x 10cm标签）
+- 📅 创建时间记录
 
-#### 上架流程
-1. 在首页点击"上架"模块
-2. 选择库位号（从库位管理中预设的库位）
-3. 点击"继续"进入包裹录入页面
-4. 输入包裹号并点击"添加"
-5. 系统自动记录包裹号和上架时间
-6. 可随时查看、删除记录或导出数据
-
-#### 库位管理流程
-1. 在首页点击"退件看板"
-2. 进入"库位管理"
-3. 输入库位号并添加
-4. 勾选需要打印的库位
-5. 点击"打印二维码"生成可打印的二维码
-
-#### 中心退回管理流程
-1. 在退件看板中进入"中心退回管理"
-2. 使用搜索框查找特定运单
-3. 使用标签页按状态筛选
-4. 选择需要处理的运单
-5. 点击"指令下达"
-6. 选择目标状态（重派/退回客户等）
-
-## 数据存储
-
-目前使用浏览器的 LocalStorage 存储数据，包括：
-
-### 包裹数据 (packages)
-- 包裹号
-- 库位号
-- 包裹状态（在库内/待下架/已下架）
-- 客服指令（重派/重派（新面单）/退回客户）
-- 上架时间
-- 下架时间
-- 下达指令时间
-- 状态历史记录
-
-数据格式示例：
-```json
-{
-  "id": 1697123456789,
-  "packageNumber": "PKG001",
-  "location": "A-01",
-  "packageStatus": "in-warehouse",
-  "customerService": "re-dispatch",
-  "shelvingTime": "2025-10-15T08:30:00.000Z",
-  "shelvingTimeDisplay": "2025/10/15 16:30:00",
-  "unshelvingTime": "2025-10-15T10:30:00.000Z",
-  "unshelvingTimeDisplay": "2025/10/15 18:30:00",
-  "instructionTime": "2025-10-15T09:00:00.000Z",
-  "instructionTimeDisplay": "2025/10/15 17:00:00",
-  "statusHistory": [
-    {
-      "action": "instruction",
-      "customerService": "re-dispatch",
-      "changedAt": "2025-10-15T09:00:00.000Z",
-      "changedAtDisplay": "2025/10/15 17:00:00"
-    }
-  ]
-}
-```
-
-### 库位数据 (locations)
-- 库位号
-- 创建时间
-
-数据格式示例：
-```json
-{
-  "id": 1697123456789,
-  "code": "A-01",
-  "createdAt": "2025-10-15T08:00:00.000Z",
-  "createdAtDisplay": "2025/10/15 16:00:00"
-}
-```
-
-### 运单状态说明
-
-**包裹状态 (packageStatus):**
-- `in-warehouse`: 在库内
-- `pending-removal`: 待下架
-- `removed`: 已下架
-
-**客服指令 (customerService):**
-- `re-dispatch`: 重派
-- `re-dispatch-new-label`: 重派（新面单）
-- `return-to-customer`: 退回客户
-
-## 项目结构
-
-```
-退回包裹管理系统/
-├── src/
-│   ├── pages/
-│   │   ├── HomePage.jsx                  # 首页 - 三大功能模块入口
-│   │   ├── ShelvingPage.jsx              # 上架 - 库位选择页
-│   │   ├── ShelvingInput.jsx             # 上架 - 包裹录入页
-│   │   ├── UnshelvingPage.jsx            # 下架 - 运单扫描下架页
-│   │   ├── ReturnDashboard.jsx           # 退件看板 - 主页
-│   │   ├── LocationManagement.jsx        # 退件看板 - 库位管理
-│   │   └── CenterReturnManagement.jsx    # 退件看板 - 中心退回管理
-│   ├── App.jsx                           # 主应用和路由配置
-│   ├── main.jsx                          # 入口文件
-│   └── index.css                         # 全局样式
-├── index.html
-├── package.json
-├── vite.config.js
-├── 启动.bat                               # 启动菜单（包含所有功能）
-├── 安装指南.txt                           # 安装说明文档
-├── 使用教程.md                            # 详细使用教程
-└── README.md
-```
-
-## 功能特性
-
-✨ **现代化UI设计**
-- 渐变色主题
-- 流畅的动画效果
-- 响应式布局，支持移动端
-
-📋 **完善的状态管理**
-- 运单状态跟踪
-- 状态历史记录
-- 批量状态更新
-
-🔍 **强大的搜索和筛选**
-- 实时搜索
-- 多状态分类
-- 快速定位运单
-
-🖨️ **二维码打印**
-- 批量生成二维码
-- 大尺寸打印（15cm x 10cm标签）
-- 二维码占60%面积，下方显示库位号
-- 高容错率，易扫描
-- 可直接打印或保存PDF
-
-📊 **数据导出**
-- CSV格式导出
-- 包含完整信息
-- 支持Excel打开
-
-🔊 **智能提醒**
-- 下架匹配成功声音提示
-- 强视觉提醒（绿色高亮卡片）
-- 关键信息突出显示
-
-## 🌐 部署到互联网
-
-### 快速部署到Vercel（5分钟完成）
-
-本项目已配置好Vercel部署，可以让全世界都访问您的系统！
-
-#### 方法一：使用启动菜单（最简单）
-
-1. 双击运行 `启动.bat`
-2. 选择 `[5] 🚀 部署到互联网（Vercel）`
-3. 按照菜单提示操作
-
-#### 方法二：查看详细教程
-
-查看以下文档了解完整部署步骤：
-- 📖 **🚀 开始部署.txt** - 快速开始指南
-- 📖 **Vercel部署指南.md** - 详细图文教程
-- 📖 **部署检查清单.md** - 逐步检查清单
-- 📖 **后端集成指南.md** - 添加数据库教程
-
-#### 部署后的优势
-
-- ✅ 全球任何地方都可访问
-- ✅ 自动HTTPS安全连接
-- ✅ 免费CDN加速
-- ✅ 自动部署更新
-- ✅ 无需服务器维护
-
-#### 数据共享方案
-
-**当前版本（LocalStorage）：**
-- 每个用户数据独立
-- 适合个人使用
-
-**升级方案（Supabase后端）：**
-- 多人共享数据
-- 云端存储
-- 完全免费
-
-详见：`后端集成指南.md`
+### 5️⃣ 用户管理 (User Management)
+- 👥 用户列表查看
+- ➕ 创建新用户
+- ✏️ 编辑用户信息
+- 🔒 角色权限管理
+- 🏙️ 城市权限分配（Super Admin）
+- 🗑️ 删除用户（不能删除自己）
 
 ---
 
-## 后续改进建议
+## 🎯 项目结构
 
-1. **后端集成**: 替换 LocalStorage 为真实的后端API和数据库 ⭐ 推荐使用Supabase
-2. **用户认证**: 添加登录功能和权限管理
-3. **数据同步**: 多设备数据同步
-4. **高级搜索**: 时间范围筛选、批次查询
-5. **统计报表**: 上架数量统计、时间分析、状态分布图
-6. **扫码枪优化**: 更好的扫码枪支持和配置
-7. **批量导入**: Excel批量导入运单信息
-8. **通知系统**: 状态变更通知、异常提醒
-9. **操作日志**: 记录所有操作历史，支持审计
-10. **打印模板**: 自定义二维码标签打印模板
+```
+退回包裹管理系统/
+├── 📁 src/
+│   ├── 📁 components/          # React 组件
+│   │   ├── Login.jsx          # 登录组件
+│   │   ├── UserManagement.jsx # 用户管理
+│   │   ├── CitySelector.jsx   # 城市选择器
+│   │   └── ResetPassword.jsx  # 密码重置
+│   ├── 📁 pages/              # 页面组件
+│   │   ├── HomePage.jsx       # 首页
+│   │   ├── ShelvingPage.jsx   # 上架-库位选择
+│   │   ├── ShelvingInput.jsx  # 上架-包裹录入
+│   │   ├── UnshelvingPage.jsx # 下架管理
+│   │   ├── CenterReturnManagement.jsx # 中心退回
+│   │   ├── LocationManagement.jsx     # 库位管理
+│   │   └── ReturnDashboard.jsx        # 退件看板
+│   ├── 📁 contexts/           # React Context
+│   │   ├── LanguageContext.jsx # 国际化
+│   │   └── CityContext.jsx     # 多城市
+│   ├── 📁 services/           # API 服务
+│   │   └── dataService.js     # Supabase 数据操作
+│   ├── 📁 locales/            # 翻译文件
+│   │   ├── zh.js              # 中文
+│   │   └── en.js              # English
+│   ├── App.jsx                # 主应用
+│   ├── main.jsx               # 入口文件
+│   └── supabaseClient.js      # Supabase 客户端
+├── 📁 database/               # 数据库脚本
+│   ├── supabase-setup.sql     # 初始化
+│   ├── 权限管理系统-完整SQL.sql # 权限系统
+│   ├── 多城市系统-完整配置.sql   # 多城市配置
+│   └── ...
+├── 📁 docs/                   # 文档
+│   ├── README.md              # 文档索引
+│   ├── 使用教程.md            # 使用指南
+│   ├── 数据结构说明.md        # 数据库说明
+│   └── ...
+├── 📄 README.md               # 项目说明（本文件）
+├── 📄 package.json            # 依赖配置
+├── 📄 vite.config.js          # Vite 配置
+├── 📄 vercel.json             # Vercel 部署配置
+└── 📄 cleanup-project.bat     # 项目清理脚本
+```
 
-## License
+---
 
-MIT
+## 👥 用户角色权限
 
+| 功能 | Super Admin | Admin | Manager | User |
+|------|-------------|-------|---------|------|
+| 上架管理 | ✅ | ✅ | ✅ | ✅ |
+| 下架管理 | ✅ | ✅ | ✅ | ✅ |
+| 中心退回 | ✅ | ✅ | ✅ | ❌ |
+| 库位管理 | ✅ | ✅ | ✅ | ❌ |
+| 用户管理 | ✅ | ✅ | ❌ | ❌ |
+| 城市权限分配 | ✅ | ❌ | ❌ | ❌ |
+| 访问所有城市 | ✅ | 根据分配 | 根据分配 | 根据分配 |
+
+---
+
+## 🌍 支持的城市
+
+- 🏙️ **MIA** - Miami
+- 🏙️ **WPB** - West Palm Beach
+- 🏙️ **FTM** - Fort Myers
+- 🏙️ **MCO** - Orlando
+- 🏙️ **TPA** - Tampa
+
+每个城市的数据完全独立，互不干扰。
+
+---
+
+## 🔐 数据安全
+
+- ✅ Row Level Security (RLS) 数据隔离
+- ✅ 基于角色的访问控制 (RBAC)
+- ✅ 邮箱验证
+- ✅ 密码重置（邮件）
+- ✅ HTTPS 加密传输
+- ✅ 城市级数据隔离
+
+---
+
+## 🚀 部署
+
+### Vercel 部署（推荐）
+
+1. **连接 GitHub**
+   - Fork 项目到你的 GitHub
+   - 登录 [Vercel](https://vercel.com)
+   - Import 你的 GitHub 仓库
+
+2. **配置环境变量**
+   ```
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
+3. **部署**
+   - 点击 Deploy
+   - 等待构建完成
+   - 🎉 上线成功！
+
+---
+
+## 🛠️ 开发指南
+
+### 添加新城市
+
+1. 在 `AVAILABLE_CITIES` 中添加城市信息：
+```javascript
+// src/contexts/CityContext.jsx
+const AVAILABLE_CITIES = [
+  { code: 'NEW', name: 'New City', nameZh: '新城市' },
+  // ...
+];
+```
+
+2. Super Admin 分配权限给用户
+
+### 添加新语言
+
+1. 创建翻译文件：
+```javascript
+// src/locales/fr.js
+export default {
+  common: {
+    back: 'Retour',
+    // ...
+  }
+};
+```
+
+2. 在 `LanguageContext.jsx` 中导入：
+```javascript
+import fr from '../locales/fr';
+const translations = { zh, en, fr };
+```
+
+### 添加新角色
+
+1. 在数据库 `profiles` 表添加角色值
+2. 更新 `UserManagement.jsx` 中的角色逻辑
+3. 更新 RLS 策略
+
+---
+
+## 📊 数据库架构
+
+### 核心表
+
+- **`profiles`** - 用户信息和权限
+- **`packages`** - 包裹信息
+- **`locations`** - 库位信息
+
+### 关键字段
+
+#### profiles
+```sql
+- id (UUID, PK)
+- email (TEXT)
+- username (TEXT)
+- role (TEXT): super_admin | admin | manager | user
+- cities (TEXT[]): 可访问的城市列表
+- current_city (TEXT): 当前选择的城市
+- is_active (BOOLEAN)
+- created_at (TIMESTAMP)
+```
+
+#### packages
+```sql
+- id (BIGINT, PK)
+- package_number (TEXT)
+- location (TEXT)
+- city (TEXT): 所属城市
+- package_status (TEXT)
+- customer_service (TEXT)
+- last_modified_by (UUID): 最后操作用户
+- shelving_time (TIMESTAMP)
+- unshelving_time (TIMESTAMP)
+```
+
+#### locations
+```sql
+- id (BIGINT, PK)
+- code (TEXT)
+- city (TEXT): 所属城市
+- created_at (TIMESTAMP)
+```
+
+详见：[数据结构说明.md](./docs/数据结构说明.md)
+
+---
+
+## 🐛 问题排查
+
+### 登录失败
+- 检查 Supabase 环境变量是否正确
+- 确认用户邮箱已验证
+- 检查用户状态是否激活
+
+### 城市切换卡住
+- 清除浏览器缓存和 Cookie
+- 检查数据库 `profiles.cities` 字段
+- 查看浏览器控制台错误信息
+
+### 实时同步不工作
+- 确认 Supabase Realtime 已启用
+- 检查 RLS 策略是否正确
+- 查看网络连接状态
+
+详见：[紧急修复-清除卡住状态.md](./docs/紧急修复-清除卡住状态.md)
+
+---
+
+## 🎨 UI 特性
+
+- 🎨 现代化渐变色设计
+- 📱 完全响应式布局
+- 🌓 清晰的视觉层次
+- ✨ 流畅的动画效果
+- 🔔 声音+视觉提醒
+- 🖨️ 打印友好设计
+
+---
+
+## 📝 更新日志
+
+### v2.0.0 (2025-10-19)
+- ✅ 多城市系统完整实现
+- ✅ Super Admin 权限系统
+- ✅ 国际化（中文/English）
+- ✅ 城市权限分配
+- ✅ 用户管理模块优化
+- ✅ 项目文档整理
+
+### v1.5.0
+- ✅ Supabase 后端集成
+- ✅ 用户认证系统
+- ✅ 实时数据同步
+- ✅ Row Level Security
+
+### v1.0.0
+- ✅ 基础功能实现
+- ✅ LocalStorage 数据存储
+
+---
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+---
+
+## 📄 License
+
+MIT License
+
+---
+
+## 📞 支持
+
+- 📧 Email: neo4444l.zhang@gmail.com
+- 📖 文档: [docs/README.md](./docs/README.md)
+- 🐛 问题: GitHub Issues
+
+---
+
+**享受使用退回包裹管理系统！** 🎉

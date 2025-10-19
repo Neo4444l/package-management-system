@@ -512,96 +512,97 @@ export default function UserManagement() {
               {isSuperAdmin && <th>{t('city.cityPermissions')}</th>}
               <th>{t('userManagement.status')}</th>
               <th>{t('userManagement.registrationDate')}</th>
-              <th>{t('userManagement.actions')}</th>
             </tr>
           </thead>
           <tbody>
             {users.map(user => (
               <tr key={user.id} className={!user.is_active ? 'inactive-row' : ''}>
                 <td>{user.email}</td>
-                <td><strong>{user.username || '-'}</strong></td>
                 <td>
-                  <span className={`role-badge ${getRoleBadgeClass(user.role)}`}>
-                    {getRoleText(user.role)}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <strong>{user.username || '-'}</strong>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <button
+                        onClick={() => handleEditUser(user)}
+                        className="btn-icon"
+                        title={t('common.edit')}
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUser(user.id, user.email)}
+                        className="btn-icon"
+                        disabled={user.id === currentUserId}
+                        title={user.id === currentUserId ? t('userManagement.cannotDeleteSelf') : t('userManagement.deleteUser')}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  {/* 角色选择：点击徽章展开选择器 */}
+                  {pendingRoleChanges[user.id] && pendingRoleChanges[user.id] !== user.role ? (
+                    <div className="role-edit-inline">
+                      <select
+                        value={pendingRoleChanges[user.id]}
+                        onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                        className="role-select-inline"
+                        disabled={user.id === currentUserId}
+                      >
+                        <option value="user">{t('roles.user')}</option>
+                        <option value="manager">{t('roles.manager')}</option>
+                        <option value="admin">{t('roles.admin')}</option>
+                        {currentUserRole === 'super_admin' && (
+                          <option value="super_admin">{t('roles.super_admin')}</option>
+                        )}
+                      </select>
+                      <button
+                        onClick={() => confirmRoleChange(user.id)}
+                        className="btn-confirm-inline"
+                        title={t('common.confirm')}
+                      >
+                        ✓
+                      </button>
+                      <button
+                        onClick={() => cancelRoleChange(user.id)}
+                        className="btn-cancel-inline"
+                        title={t('common.cancel')}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <span 
+                      className={`role-badge ${getRoleBadgeClass(user.role)} ${user.id !== currentUserId ? 'clickable' : ''}`}
+                      onClick={() => user.id !== currentUserId && handleRoleChange(user.id, user.role)}
+                      title={user.id !== currentUserId ? t('userManagement.clickToChangeRole') : ''}
+                    >
+                      {getRoleText(user.role)}
+                    </span>
+                  )}
                 </td>
                 {isSuperAdmin && (
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '12px' }}>{getCityNames(user.cities)}</span>
-                      <button 
-                        className="btn-edit" 
-                        onClick={() => handleEditCities(user)}
-                        style={{ padding: '4px 8px', fontSize: '12px' }}
-                      >
-                        {t('city.assignCities')}
-                      </button>
-                    </div>
+                    <button 
+                      className="city-permissions-btn" 
+                      onClick={() => handleEditCities(user)}
+                      title={t('city.clickToAssignCities')}
+                    >
+                      {getCityNames(user.cities) || t('city.noCities')}
+                    </button>
                   </td>
                 )}
                 <td>
-                  <span className={`status-badge ${user.is_active ? 'active' : 'inactive'}`}>
+                  <span 
+                    className={`status-badge ${user.is_active ? 'active' : 'inactive'} ${user.id !== currentUserId ? 'clickable' : ''}`}
+                    onClick={() => user.id !== currentUserId && toggleUserStatus(user.id, user.is_active)}
+                    title={user.id !== currentUserId ? t('userManagement.clickToToggleStatus') : ''}
+                  >
                     {user.is_active ? t('userManagement.active') : t('userManagement.inactive')}
                   </span>
                 </td>
                 <td>{new Date(user.created_at).toLocaleDateString('zh-CN')}</td>
-                <td>
-                  <div className="action-buttons">
-                    <select
-                      value={pendingRoleChanges[user.id] || user.role}
-                      onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                      className="role-select"
-                      disabled={user.id === currentUserId}
-                    >
-                      <option value="user">{t('roles.user')}</option>
-                      <option value="manager">{t('roles.manager')}</option>
-                      <option value="admin">{t('roles.admin')}</option>
-                      {currentUserRole === 'super_admin' && (
-                        <option value="super_admin">{t('roles.super_admin')}</option>
-                      )}
-                    </select>
-                    {pendingRoleChanges[user.id] && pendingRoleChanges[user.id] !== user.role && (
-                      <div className="confirm-buttons">
-                        <button
-                          onClick={() => confirmRoleChange(user.id)}
-                          className="btn-confirm"
-                          title="确认更改"
-                        >
-                          ✓
-                        </button>
-                        <button
-                          onClick={() => cancelRoleChange(user.id)}
-                          className="btn-cancel"
-                          title="取消更改"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    )}
-                    <button
-                      onClick={() => toggleUserStatus(user.id, user.is_active)}
-                      className={`btn-toggle ${user.is_active ? 'btn-deactivate' : 'btn-activate'}`}
-                      disabled={user.id === currentUserId}
-                    >
-                      {user.is_active ? t('userManagement.deactivate') : t('userManagement.activate')}
-                    </button>
-                    <button
-                      onClick={() => handleEditUser(user)}
-                      className="btn-edit"
-                      title={t('common.edit')}
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      onClick={() => handleDeleteUser(user.id, user.email)}
-                      className="btn-delete"
-                      disabled={user.id === currentUserId}
-                      title={user.id === currentUserId ? t('userManagement.cannotDeleteSelf') : t('userManagement.deleteUser')}
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </td>
               </tr>
             ))}
           </tbody>

@@ -81,6 +81,8 @@ export const zh = {
     assignCities: '分配城市',
     selectCities: '选择城市',
     noCityAccess: '无城市访问权限',
+    noCities: '未分配城市',
+    clickToAssignCities: '点击分配城市权限',
   },
 
   // 用户管理
@@ -123,6 +125,8 @@ export const zh = {
     demoteWarning: '您正在降低自己的权限！降级后您将无法访问用户管理页面，并会自动返回首页。确定要继续吗？',
     roleUpdated: '角色更新成功',
     statusUpdated: '用户状态更新成功',
+    clickToChangeRole: '点击修改角色',
+    clickToToggleStatus: '点击切换状态',
   },
 
   // 首页

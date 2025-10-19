@@ -81,6 +81,8 @@ export const en = {
     assignCities: 'Assign Cities',
     selectCities: 'Select Cities',
     noCityAccess: 'No city access permission',
+    noCities: 'No cities assigned',
+    clickToAssignCities: 'Click to assign city permissions',
   },
 
   // User Management
@@ -123,6 +125,8 @@ export const en = {
     demoteWarning: '⚠️ Warning: You are demoting yourself! After demotion, you will lose access to user management and be redirected to home page. Continue?',
     roleUpdated: 'Role updated successfully',
     statusUpdated: 'User status updated successfully',
+    clickToChangeRole: 'Click to change role',
+    clickToToggleStatus: 'Click to toggle status',
   },
 
   // Home
