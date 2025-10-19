@@ -30,6 +30,9 @@ export default function UserManagement() {
   const [editCities, setEditCities] = useState([]) // 编辑用户城市权限
   const [showCityModal, setShowCityModal] = useState(false)
   const [cityEditUser, setCityEditUser] = useState(null)
+  const [showRoleModal, setShowRoleModal] = useState(false) // 角色编辑模态框
+  const [roleEditUser, setRoleEditUser] = useState(null) // 正在编辑角色的用户
+  const [selectedRole, setSelectedRole] = useState('') // 选择的角色
 
   useEffect(() => {
     fetchUsers()
@@ -140,6 +143,58 @@ export default function UserManagement() {
     const newPending = { ...pendingRoleChanges }
     delete newPending[userId]
     setPendingRoleChanges(newPending)
+  }
+
+  // 打开角色编辑模态框
+  const handleEditRole = (user) => {
+    if (user.id === currentUserId) return // 不能编辑自己的角色
+    setRoleEditUser(user)
+    setSelectedRole(user.role)
+    setShowRoleModal(true)
+  }
+
+  // 保存角色更改
+  const handleSaveRole = async () => {
+    if (!roleEditUser || !selectedRole) return
+    
+    try {
+      setError('')
+      setSuccess('')
+
+      // 检查是否是当前用户降低自己的权限（理论上不会发生，但保留检查）
+      const isSelfDemotion = roleEditUser.id === currentUserId && 
+        (selectedRole === 'user' || selectedRole === 'manager') && 
+        (currentUserRole === 'admin' || currentUserRole === 'super_admin')
+
+      if (isSelfDemotion) {
+        if (!window.confirm(t('userManagement.demoteWarning'))) {
+          setShowRoleModal(false)
+          return
+        }
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: selectedRole, updated_at: new Date().toISOString() })
+        .eq('id', roleEditUser.id)
+
+      if (error) throw error
+
+      setSuccess(t('userManagement.roleUpdated') + '!')
+      setShowRoleModal(false)
+      setRoleEditUser(null)
+      setSelectedRole('')
+      await fetchUsers()
+
+      // 如果是自己降级，跳转到首页
+      if (isSelfDemotion) {
+        setTimeout(() => {
+          navigate('/')
+        }, 1500)
+      }
+    } catch (error) {
+      setError('更新失败：' + error.message)
+    }
   }
 
   const toggleUserStatus = async (userId, currentStatus) => {
@@ -512,6 +567,7 @@ export default function UserManagement() {
               {isSuperAdmin && <th>{t('city.cityPermissions')}</th>}
               <th>{t('userManagement.status')}</th>
               <th>{t('userManagement.registrationDate')}</th>
+              <th>{t('userManagement.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -521,66 +577,24 @@ export default function UserManagement() {
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <strong>{user.username || '-'}</strong>
-                    <div style={{ display: 'flex', gap: '4px' }}>
-                      <button
-                        onClick={() => handleEditUser(user)}
-                        className="btn-icon"
-                        title={t('common.edit')}
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => handleDeleteUser(user.id, user.email)}
-                        className="btn-icon"
-                        disabled={user.id === currentUserId}
-                        title={user.id === currentUserId ? t('userManagement.cannotDeleteSelf') : t('userManagement.deleteUser')}
-                      >
-                        🗑️
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleEditUser(user)}
+                      className="btn-icon"
+                      title={t('common.edit')}
+                    >
+                      ✏️
+                    </button>
                   </div>
                 </td>
                 <td>
-                  {/* 角色选择：点击徽章展开选择器 */}
-                  {pendingRoleChanges[user.id] && pendingRoleChanges[user.id] !== user.role ? (
-                    <div className="role-edit-inline">
-                      <select
-                        value={pendingRoleChanges[user.id]}
-                        onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                        className="role-select-inline"
-                        disabled={user.id === currentUserId}
-                      >
-                        <option value="user">{t('roles.user')}</option>
-                        <option value="manager">{t('roles.manager')}</option>
-                        <option value="admin">{t('roles.admin')}</option>
-                        {currentUserRole === 'super_admin' && (
-                          <option value="super_admin">{t('roles.super_admin')}</option>
-                        )}
-                      </select>
-                      <button
-                        onClick={() => confirmRoleChange(user.id)}
-                        className="btn-confirm-inline"
-                        title={t('common.confirm')}
-                      >
-                        ✓
-                      </button>
-                      <button
-                        onClick={() => cancelRoleChange(user.id)}
-                        className="btn-cancel-inline"
-                        title={t('common.cancel')}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <span 
-                      className={`role-badge ${getRoleBadgeClass(user.role)} ${user.id !== currentUserId ? 'clickable' : ''}`}
-                      onClick={() => user.id !== currentUserId && handleRoleChange(user.id, user.role)}
-                      title={user.id !== currentUserId ? t('userManagement.clickToChangeRole') : ''}
-                    >
-                      {getRoleText(user.role)}
-                    </span>
-                  )}
+                  <button 
+                    className={`role-badge ${getRoleBadgeClass(user.role)} ${user.id !== currentUserId ? 'clickable' : ''}`}
+                    onClick={() => user.id !== currentUserId && handleEditRole(user)}
+                    title={user.id !== currentUserId ? t('userManagement.clickToChangeRole') : ''}
+                    disabled={user.id === currentUserId}
+                  >
+                    {getRoleText(user.role)}
+                  </button>
                 </td>
                 {isSuperAdmin && (
                   <td>
@@ -603,6 +617,16 @@ export default function UserManagement() {
                   </span>
                 </td>
                 <td>{new Date(user.created_at).toLocaleDateString('zh-CN')}</td>
+                <td>
+                  <button
+                    onClick={() => handleDeleteUser(user.id, user.email)}
+                    className="btn-delete-icon"
+                    disabled={user.id === currentUserId}
+                    title={user.id === currentUserId ? t('userManagement.cannotDeleteSelf') : t('userManagement.deleteUser')}
+                  >
+                    🗑️
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -745,6 +769,55 @@ export default function UserManagement() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 角色编辑弹窗 */}
+      {showRoleModal && roleEditUser && (
+        <div className="modal-overlay" onClick={() => setShowRoleModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>{t('userManagement.editUser')} - {roleEditUser.username}</h2>
+            <div style={{ marginBottom: '20px', padding: '10px', background: '#f0f7ff', borderRadius: '6px' }}>
+              <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
+                {t('userManagement.clickToChangeRole')}
+              </p>
+            </div>
+            <div className="form-group">
+              <label>{t('roles.role')}</label>
+              <select
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value)}
+                className="role-select-modal"
+              >
+                <option value="user">{t('roles.user')}</option>
+                <option value="manager">{t('roles.manager')}</option>
+                <option value="admin">{t('roles.admin')}</option>
+                {currentUserRole === 'super_admin' && (
+                  <option value="super_admin">{t('roles.super_admin')}</option>
+                )}
+              </select>
+            </div>
+            <div className="modal-buttons" style={{ marginTop: '20px' }}>
+              <button 
+                type="button" 
+                className="btn-submit"
+                onClick={handleSaveRole}
+              >
+                {t('common.save')}
+              </button>
+              <button 
+                type="button" 
+                className="btn-cancel-modal"
+                onClick={() => {
+                  setShowRoleModal(false)
+                  setRoleEditUser(null)
+                  setSelectedRole('')
+                }}
+              >
+                {t('common.cancel')}
+              </button>
+            </div>
           </div>
         </div>
       )}
