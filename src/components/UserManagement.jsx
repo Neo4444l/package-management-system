@@ -97,7 +97,7 @@ export default function UserManagement() {
       // 检查是否是当前用户降低自己的权限
       const isSelfDemotion = userId === currentUserId && 
         (newRole === 'user' || newRole === 'manager') && 
-        currentUserRole === 'admin'
+        (currentUserRole === 'admin' || currentUserRole === 'super_admin')
 
       if (isSelfDemotion) {
         if (!window.confirm(t('userManagement.demoteWarning'))) {
@@ -295,13 +295,20 @@ export default function UserManagement() {
 
       if (error) throw error
 
-      // 更新用户角色和用户名
+      // 更新用户角色、用户名和城市权限
       if (data.user) {
+        // 根据角色设置城市权限
+        const cities = newUserRole === 'super_admin' 
+          ? ['MIA', 'WPB', 'FTM', 'MCO', 'TPA']  // super_admin 所有城市
+          : newUserCities  // 其他角色使用选择的城市
+
         const { error: profileError } = await supabase
           .from('profiles')
           .update({ 
             role: newUserRole,
-            username: newUserUsername.trim()
+            username: newUserUsername.trim(),
+            cities: cities,
+            current_city: cities[0] || 'MIA'
           })
           .eq('id', data.user.id)
 
@@ -413,8 +420,8 @@ export default function UserManagement() {
     )
   }
 
-  // 只有管理员可以访问此页面
-  if (currentUserRole !== 'admin') {
+  // 只有管理员和超级管理员可以访问此页面
+  if (currentUserRole !== 'admin' && currentUserRole !== 'super_admin') {
     return (
       <div className="user-management">
         <div className="access-denied">
@@ -553,6 +560,9 @@ export default function UserManagement() {
                       <option value="user">{t('roles.user')}</option>
                       <option value="manager">{t('roles.manager')}</option>
                       <option value="admin">{t('roles.admin')}</option>
+                      {currentUserRole === 'super_admin' && (
+                        <option value="super_admin">{t('roles.super_admin')}</option>
+                      )}
                     </select>
                     {pendingRoleChanges[user.id] && pendingRoleChanges[user.id] !== user.role && (
                       <div className="confirm-buttons">
@@ -714,6 +724,9 @@ export default function UserManagement() {
                   <option value="user">{t('roles.user')}</option>
                   <option value="manager">{t('roles.manager')}</option>
                   <option value="admin">{t('roles.admin')}</option>
+                  {currentUserRole === 'super_admin' && (
+                    <option value="super_admin">{t('roles.super_admin')}</option>
+                  )}
                 </select>
               </div>
               <div className="modal-buttons">
