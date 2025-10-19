@@ -508,10 +508,8 @@ export default function UserManagement() {
             <tr>
               <th>{t('auth.email')}</th>
               <th>{t('userManagement.username')}</th>
-              <th>{t('userManagement.fullName')}</th>
               <th>{t('roles.role')}</th>
               {isSuperAdmin && <th>{t('city.cityPermissions')}</th>}
-              <th>{t('userManagement.department')}</th>
               <th>{t('userManagement.status')}</th>
               <th>{t('userManagement.registrationDate')}</th>
               <th>{t('userManagement.actions')}</th>
@@ -522,7 +520,6 @@ export default function UserManagement() {
               <tr key={user.id} className={!user.is_active ? 'inactive-row' : ''}>
                 <td>{user.email}</td>
                 <td><strong>{user.username || '-'}</strong></td>
-                <td>{user.full_name || '-'}</td>
                 <td>
                   <span className={`role-badge ${getRoleBadgeClass(user.role)}`}>
                     {getRoleText(user.role)}
@@ -542,7 +539,6 @@ export default function UserManagement() {
                     </div>
                   </td>
                 )}
-                <td>{user.department || '-'}</td>
                 <td>
                   <span className={`status-badge ${user.is_active ? 'active' : 'inactive'}`}>
                     {user.is_active ? t('userManagement.active') : t('userManagement.inactive')}
