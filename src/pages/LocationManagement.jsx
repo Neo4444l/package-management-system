@@ -256,52 +256,55 @@ function LocationManagement() {
           }
           body {
             font-family: Arial, sans-serif;
-            padding: 10mm;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
+            padding: 15mm;
+            background-color: #f5f5f5;
           }
           .qr-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 10mm;
-            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
           }
-          /* 每个二维码占据 15cm x 10cm 的标签，二维码占60% */
+          /* 每个二维码占据 15cm x 10cm 的标签 */
           .qr-item {
-            width: 15cm;
+            width: 100%;
+            max-width: 15cm;
             height: 10cm;
             border: 1px dashed #ccc;
+            background-color: white;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             page-break-inside: avoid;
-            padding: 1cm;
+            padding: 0.8cm;
+            box-sizing: border-box;
           }
           .qr-item canvas {
             display: block;
-            margin: 0 auto 0.5cm auto;
-            /* 二维码占标签宽度的60% */
-            width: 9cm !important;
-            height: 9cm !important;
+            margin: 0 auto 0.4cm auto;
+            /* 二维码大小，确保在框内 */
+            width: 6cm !important;
+            height: 6cm !important;
+            max-width: 100%;
+            max-height: auto;
           }
           .qr-code {
-            font-size: 36px;
+            font-size: 32px;
             font-weight: bold;
-            margin: 0.3cm 0;
+            margin: 0.3cm 0 0.2cm 0;
             color: #000;
             text-align: center;
             width: 100%;
             letter-spacing: 2px;
           }
           .qr-date {
-            font-size: 16px;
+            font-size: 14px;
             color: #666;
             text-align: center;
             width: 100%;
-            margin-top: 0.2cm;
+            margin-top: 0.1cm;
           }
           @media print {
             @page {
@@ -310,11 +313,11 @@ function LocationManagement() {
             }
             body {
               padding: 0;
-              display: block;
-              min-height: auto;
+              background-color: white;
             }
             .qr-item {
               border: none;
+              background-color: white;
             }
             .qr-grid {
               gap: 5mm;
@@ -336,9 +339,9 @@ function LocationManagement() {
       qrItem.className = 'qr-item'
 
       const canvas = printWindow.document.createElement('canvas')
-      // 设置更大的二维码尺寸
+      // 设置二维码尺寸为 6cm
       await QRCode.toCanvas(canvas, location.code, {
-        width: 340,  // 9cm ≈ 340px at 96 DPI
+        width: 226,  // 6cm ≈ 226px at 96 DPI
         margin: 1,
         errorCorrectionLevel: 'H',  // 高容错率
         color: {
