@@ -123,20 +123,33 @@ export const CityProvider = ({ children }) => {
       // 设置当前城市
       const savedCity = localStorage.getItem('currentCity')
       
-      if (savedCity && accessibleCities.includes(savedCity)) {
-        console.log('✅ CityContext: 使用已保存的城市 -', savedCity)
-        setCurrentCity(savedCity)
-      } else if (profile.current_city && accessibleCities.includes(profile.current_city)) {
+      // 优先使用数据库中的城市（如果在权限范围内）
+      if (profile.current_city && accessibleCities.includes(profile.current_city)) {
         console.log('✅ CityContext: 使用数据库城市 -', profile.current_city)
         setCurrentCity(profile.current_city)
         localStorage.setItem('currentCity', profile.current_city)
+      } else if (savedCity && accessibleCities.includes(savedCity)) {
+        // 其次使用保存的城市（如果在权限范围内）
+        console.log('✅ CityContext: 使用已保存的城市 -', savedCity)
+        setCurrentCity(savedCity)
+        // 同步到数据库
+        await supabase
+          .from('profiles')
+          .update({ current_city: savedCity })
+          .eq('id', user.id)
       } else if (accessibleCities.length > 0) {
+        // 如果都不在权限范围内，使用第一个有权限的城市
         const defaultCity = accessibleCities[0]
-        console.log('✅ CityContext: 使用默认城市 -', defaultCity)
+        console.log('⚠️ CityContext: 城市不在权限范围，使用第一个授权城市 -', defaultCity)
         setCurrentCity(defaultCity)
         localStorage.setItem('currentCity', defaultCity)
+        // 同步到数据库
+        await supabase
+          .from('profiles')
+          .update({ current_city: defaultCity })
+          .eq('id', user.id)
       } else {
-        console.warn('⚠️ CityContext: 用户没有任何城市权限，使用 MIA')
+        console.error('❌ CityContext: 用户没有任何城市权限！')
         setCurrentCity('MIA')
         setUserCities(['MIA'])
         localStorage.setItem('currentCity', 'MIA')
