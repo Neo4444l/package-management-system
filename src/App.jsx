@@ -89,14 +89,27 @@ function App() {
   }
 
   const handleLogout = async () => {
-    // 清除城市相关的本地缓存数据（保留语言设置）
-    localStorage.removeItem('currentCity')
-    
-    // 登出
-    await supabase.auth.signOut()
-    
-    // 强制刷新页面，确保所有状态都被重置
-    window.location.href = '/'
+    try {
+      console.log('🚪 开始登出流程...')
+      
+      // 1. 清除城市相关的本地缓存数据（保留语言设置）
+      localStorage.removeItem('currentCity')
+      console.log('✅ 已清除 currentCity')
+      
+      // 2. 登出 Supabase
+      await supabase.auth.signOut()
+      console.log('✅ Supabase 登出成功')
+      
+      // 3. 强制刷新页面并清除缓存
+      console.log('🔄 准备刷新页面...')
+      
+      // 使用 location.reload(true) 强制从服务器重新加载
+      window.location.reload()
+    } catch (error) {
+      console.error('❌ 登出失败:', error)
+      // 即使出错也要刷新页面
+      window.location.reload()
+    }
   }
 
   if (loading) {
