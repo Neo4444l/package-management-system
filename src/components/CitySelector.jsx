@@ -4,8 +4,8 @@ import { useLanguage } from '../contexts/LanguageContext'
 import './CitySelector.css'
 
 function CitySelector() {
-  const { currentCity, changeCity, getCityName, hasMultipleCities, getAccessibleCities } = useCity()
-  const { t, language } = useLanguage()
+  const { currentCity, changeCity, hasMultipleCities, getAccessibleCities } = useCity()
+  const { t } = useLanguage()
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -14,7 +14,7 @@ function CitySelector() {
     return (
       <div className="city-display-only">
         <span className="city-icon">🏙️</span>
-        <span className="city-name">{getCityName(currentCity, language)}</span>
+        <span className="city-name">{currentCity}</span>
       </div>
     )
   }
@@ -31,8 +31,7 @@ function CitySelector() {
     
     if (success) {
       setIsOpen(false)
-      // 刷新页面以加载新城市的数据
-      window.location.reload()
+      // 城市已切换，各组件会自动响应
     } else {
       alert(t('city.changeFailed'))
     }
@@ -49,7 +48,7 @@ function CitySelector() {
         disabled={loading}
       >
         <span className="city-icon">🏙️</span>
-        <span className="city-name">{getCityName(currentCity, language)}</span>
+        <span className="city-name">{currentCity}</span>
         <span className={`dropdown-arrow ${isOpen ? 'open' : ''}`}>▼</span>
       </button>
 
@@ -69,9 +68,6 @@ function CitySelector() {
                   disabled={loading}
                 >
                   <span className="city-code">{city.code}</span>
-                  <span className="city-full-name">
-                    {language === 'zh' ? city.nameZh : city.name}
-                  </span>
                   {currentCity === city.code && (
                     <span className="check-icon">✓</span>
                   )}

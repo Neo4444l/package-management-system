@@ -140,7 +140,7 @@ function App() {
                           {currentCity && (
                             <span className="btn-sublabel city-label">
                               <span className="city-icon-small">🏙️</span>
-                              {getCityName(currentCity, language)}
+                              {currentCity}
                               {!hasMultipleCities() && <span className="city-lock-icon">🔒</span>}
                             </span>
                           )}
@@ -185,7 +185,7 @@ function App() {
                                         setShowUserMenu(false)
                                       }}
                                     >
-                                      {getCityName(city.code, language)}
+                                      {city.code}
                                       {currentCity === city.code && <span className="check-icon">✓</span>}
                                     </button>
                                   ))}

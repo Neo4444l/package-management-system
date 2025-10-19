@@ -191,11 +191,8 @@ export const CityProvider = ({ children }) => {
         console.log('✅ CityContext: 数据库已同步')
       }
       
-      // 刷新页面加载新城市数据
-      setTimeout(() => {
-        console.log('🔄 CityContext: 刷新页面...')
-        window.location.reload()
-      }, 100)
+      // 不需要刷新页面，各组件的 useEffect 会自动响应 currentCity 变化
+      console.log('✅ CityContext: 城市切换完成，无需刷新页面')
       
       return true
     } catch (error) {
