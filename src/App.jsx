@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import { useLanguage } from './contexts/LanguageContext'
+import { useCity } from './contexts/CityContext'
 import CitySelector from './components/CitySelector'
 import Login from './components/Login'
 import ResetPassword from './components/ResetPassword'
@@ -17,10 +18,12 @@ import './App.css'
 
 function App() {
   const { t, language, changeLanguage } = useLanguage()
+  const { currentCity, availableCities, userCities, changeCurrentCity, getCityName } = useCity()
   const [session, setSession] = useState(null)
   const [userRole, setUserRole] = useState(null)
   const [username, setUsername] = useState('') // 添加用户名状态
   const [loading, setLoading] = useState(true)
+  const [showUserMenu, setShowUserMenu] = useState(false) // 用户菜单显示状态
 
   useEffect(() => {
     // 检查当前session
@@ -110,50 +113,105 @@ function App() {
           <>
             <Route path="*" element={
               <div className="App">
-                <div className="user-info">
-                  {/* 用户名 + 角色徽章 */}
-                  <div className="user-profile">
-                    <span className="user-icon">👤</span>
-                    <span className="username">{username}</span>
-                    {userRole && (
-                      <span className={`role-badge-compact ${getRoleBadge(userRole).class}`}>
-                        {getRoleBadge(userRole).text}
-                      </span>
+                <div className="user-info-bar">
+                  {/* 用户资料按钮 */}
+                  <div className="user-menu-container">
+                    <button 
+                      className="user-profile-btn"
+                      onClick={() => setShowUserMenu(!showUserMenu)}
+                    >
+                      <span className="user-avatar">👤</span>
+                      <div className="user-details">
+                        <span className="user-name">{username}</span>
+                        {userRole && (
+                          <span className={`user-role ${getRoleBadge(userRole).class}`}>
+                            {getRoleBadge(userRole).text}
+                          </span>
+                        )}
+                      </div>
+                      <span className="dropdown-arrow">▼</span>
+                    </button>
+                    
+                    {/* 下拉菜单 */}
+                    {showUserMenu && (
+                      <>
+                        <div className="menu-overlay" onClick={() => setShowUserMenu(false)} />
+                        <div className="user-dropdown-menu">
+                          {/* 用户管理（仅管理员） */}
+                          {(userRole === 'admin' || userRole === 'super_admin') && (
+                            <a 
+                              href="/user-management" 
+                              className="menu-item"
+                              onClick={() => setShowUserMenu(false)}
+                            >
+                              <span className="menu-icon">👥</span>
+                              <span className="menu-text">{t('userManagement.title')}</span>
+                            </a>
+                          )}
+                          
+                          {/* 城市选择 */}
+                          {userCities && userCities.length > 1 && (
+                            <div className="menu-section">
+                              <div className="menu-section-title">
+                                <span className="menu-icon">🏙️</span>
+                                <span>{t('city.selectCity')}</span>
+                              </div>
+                              <div className="city-list">
+                                {availableCities
+                                  .filter(city => userCities.includes(city.code))
+                                  .map(city => (
+                                    <button
+                                      key={city.code}
+                                      className={`city-option ${currentCity === city.code ? 'active' : ''}`}
+                                      onClick={() => {
+                                        changeCurrentCity(city.code)
+                                        setShowUserMenu(false)
+                                      }}
+                                    >
+                                      {getCityName(city.code)}
+                                      {currentCity === city.code && <span className="check-icon">✓</span>}
+                                    </button>
+                                  ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* 语言选择 */}
+                          <div className="menu-section">
+                            <div className="menu-section-title">
+                              <span className="menu-icon">🌐</span>
+                              <span>{t('common.language')}</span>
+                            </div>
+                            <div className="language-list">
+                              <button
+                                className={`lang-option ${language === 'zh' ? 'active' : ''}`}
+                                onClick={() => {
+                                  changeLanguage('zh')
+                                  setShowUserMenu(false)
+                                }}
+                              >
+                                中文
+                                {language === 'zh' && <span className="check-icon">✓</span>}
+                              </button>
+                              <button
+                                className={`lang-option ${language === 'en' ? 'active' : ''}`}
+                                onClick={() => {
+                                  changeLanguage('en')
+                                  setShowUserMenu(false)
+                                }}
+                              >
+                                English
+                                {language === 'en' && <span className="check-icon">✓</span>}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </>
                     )}
                   </div>
                   
-                  {/* 用户管理链接（仅管理员） */}
-                  {(userRole === 'admin' || userRole === 'super_admin') && (
-                    <a href="/user-management" className="nav-link">
-                      <span className="nav-icon">👥</span>
-                      <span className="nav-text">{t('userManagement.title')}</span>
-                    </a>
-                  )}
-                  
-                  {/* 城市选择器 */}
-                  <CitySelector />
-                  
-                  {/* 语言切换 */}
-                  <div className="lang-switcher-compact">
-                    <button
-                      className={`lang-btn-compact ${language === 'zh' ? 'active' : ''}`}
-                      onClick={() => changeLanguage('zh')}
-                      title="中文"
-                    >
-                      中
-                    </button>
-                    <span className="lang-divider">|</span>
-                    <button
-                      className={`lang-btn-compact ${language === 'en' ? 'active' : ''}`}
-                      onClick={() => changeLanguage('en')}
-                      title="English"
-                    >
-                      EN
-                    </button>
-                  </div>
-                  
-                  {/* 退出登录 */}
-                  <button onClick={handleLogout} className="btn-logout-compact">
+                  {/* 退出登录按钮 */}
+                  <button onClick={handleLogout} className="btn-logout-primary">
                     {t('auth.logout')}
                   </button>
                 </div>

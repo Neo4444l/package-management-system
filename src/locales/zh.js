@@ -22,6 +22,7 @@ export const zh = {
     export: '导出',
     all: '全部',
     continue: '继续',
+    language: '语言',
   },
 
   // 登录和认证

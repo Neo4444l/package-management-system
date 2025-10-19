@@ -22,6 +22,7 @@ export const en = {
     export: 'Export',
     all: 'All',
     continue: 'Continue',
+    language: 'Language',
   },
 
   // Authentication
