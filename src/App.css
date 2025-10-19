@@ -4,7 +4,10 @@
   flex-direction: column;
 }
 
-/* 用户信息栏 - 全新简洁设计 */
+/* ========================================
+   用户信息栏 - 统一三按钮设计
+   ======================================== */
+
 .user-info-bar {
   position: fixed;
   top: 20px;
@@ -27,73 +30,100 @@
   }
 }
 
-/* 用户菜单容器 */
-.user-menu-container {
-  position: relative;
-}
+/* ========================================
+   统一按钮样式（用户、语言、退出）
+   ======================================== */
 
-/* 用户资料按钮 */
-.user-profile-btn {
+.top-bar-btn {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 16px;
+  min-height: 56px;
   background: white;
   border: none;
   border-radius: 25px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
 }
 
-.user-profile-btn:hover {
+.top-bar-btn:hover {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   transform: translateY(-2px);
 }
 
-.user-profile-btn:active {
+.top-bar-btn:active {
   transform: translateY(0);
 }
 
-.user-avatar {
-  font-size: 24px;
+/* 按钮图标 */
+.btn-icon {
+  font-size: 20px;
   line-height: 1;
+  flex-shrink: 0;
 }
 
-.user-details {
+/* 按钮内容（用户信息：两行） */
+.btn-content {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
+  flex: 1;
+  min-width: 0;
 }
 
-.user-name {
+.btn-label {
   font-size: 14px;
   font-weight: 600;
   color: #333;
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
-.user-role {
+.btn-sublabel {
   font-size: 10px;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 8px;
   line-height: 1.2;
   letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
-.dropdown-arrow {
+/* 按钮居中文字（语言、退出） */
+.btn-label-center {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* 下拉箭头 */
+.btn-arrow {
   font-size: 10px;
   color: #999;
   transition: transform 0.3s ease;
+  flex-shrink: 0;
 }
 
-.user-profile-btn:hover .dropdown-arrow {
+.top-bar-btn:hover .btn-arrow {
   color: #667eea;
+  transform: translateY(2px);
 }
 
-/* 角色徽章颜色 */
+/* ========================================
+   角色徽章颜色
+   ======================================== */
+
 .role-super-admin {
   background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
   color: white;
@@ -114,7 +144,18 @@
   color: white;
 }
 
-/* 遮罩层 */
+/* ========================================
+   用户菜单容器
+   ======================================== */
+
+.user-menu-container {
+  position: relative;
+}
+
+/* ========================================
+   遮罩层和下拉菜单
+   ======================================== */
+
 .menu-overlay {
   position: fixed;
   top: 0;
@@ -125,7 +166,6 @@
   z-index: 999;
 }
 
-/* 下拉菜单 */
 .user-dropdown-menu {
   position: absolute;
   top: calc(100% + 8px);
@@ -150,7 +190,10 @@
   }
 }
 
-/* 菜单项 */
+/* ========================================
+   菜单项
+   ======================================== */
+
 .menu-item {
   display: flex;
   align-items: center;
@@ -171,6 +214,7 @@
   font-size: 18px;
   width: 24px;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .menu-text {
@@ -179,7 +223,10 @@
   flex: 1;
 }
 
-/* 菜单章节 */
+/* ========================================
+   菜单章节
+   ======================================== */
+
 .menu-section {
   padding: 12px 0;
   border-bottom: 1px solid #f5f5f5;
@@ -201,7 +248,10 @@
   letter-spacing: 0.5px;
 }
 
-/* 城市列表 */
+/* ========================================
+   城市列表
+   ======================================== */
+
 .city-list {
   display: flex;
   flex-direction: column;
@@ -239,100 +289,47 @@
 .check-icon {
   font-size: 14px;
   font-weight: bold;
+  margin-left: 8px;
 }
 
-/* 语言列表 */
-.language-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 4px 8px;
-}
+/* ========================================
+   响应式设计
+   ======================================== */
 
-.lang-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px;
-  background: transparent;
-  border: none;
-  border-radius: 8px;
-  color: #666;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: left;
-}
-
-.lang-option:hover {
-  background: #f8f9ff;
-  color: #667eea;
-}
-
-.lang-option.active {
-  background: #f8f9ff;
-  color: #667eea;
-  font-weight: 600;
-}
-
-/* 退出登录按钮 */
-.btn-logout-primary {
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 25px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-}
-
-.btn-logout-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-}
-
-.btn-logout-primary:active {
-  transform: translateY(0);
-}
-
-/* 响应式设计 */
 @media (max-width: 768px) {
   .user-info-bar {
     top: 10px;
     right: 10px;
     left: 10px;
-    justify-content: space-between;
-  }
-
-  .user-profile-btn {
-    padding: 8px 12px;
     gap: 8px;
   }
 
-  .user-avatar {
-    font-size: 20px;
+  .top-bar-btn {
+    padding: 8px 12px;
+    min-height: 48px;
+    gap: 8px;
   }
 
-  .user-name {
-    font-size: 12px;
+  .btn-icon {
+    font-size: 18px;
   }
 
-  .user-role {
+  .btn-label,
+  .btn-label-center {
+    font-size: 13px;
+  }
+
+  .btn-sublabel {
     font-size: 9px;
     padding: 2px 6px;
   }
 
-  .dropdown-arrow {
-    font-size: 8px;
+  .btn-arrow {
+    font-size: 9px;
   }
 
   .user-dropdown-menu {
     min-width: 240px;
-    right: 0;
   }
 
   .menu-item {
@@ -348,39 +345,44 @@
     font-size: 13px;
   }
 
-  .city-option,
-  .lang-option {
+  .city-option {
     padding: 8px 12px;
-    font-size: 13px;
-  }
-
-  .btn-logout-primary {
-    padding: 8px 16px;
     font-size: 13px;
   }
 }
 
 @media (max-width: 480px) {
   .user-info-bar {
-    gap: 8px;
+    gap: 6px;
+    flex-wrap: wrap;
   }
 
-  .user-profile-btn {
+  .top-bar-btn {
     padding: 6px 10px;
+    min-height: 42px;
     gap: 6px;
   }
 
-  .user-details {
+  .btn-icon {
+    font-size: 16px;
+  }
+
+  .btn-content {
     gap: 1px;
   }
 
-  .user-name {
-    font-size: 11px;
+  .btn-label,
+  .btn-label-center {
+    font-size: 12px;
   }
 
-  .user-role {
+  .btn-sublabel {
     font-size: 8px;
     padding: 1px 5px;
+  }
+
+  .btn-arrow {
+    font-size: 8px;
   }
 
   .user-dropdown-menu {
@@ -393,9 +395,33 @@
     font-size: 11px;
   }
 
-  .btn-logout-primary {
-    padding: 6px 12px;
+  .city-option {
     font-size: 12px;
   }
 }
 
+/* ========================================
+   确保所有按钮高度一致
+   ======================================== */
+
+.user-info-bar > .user-menu-container > .top-bar-btn,
+.user-info-bar > .top-bar-btn {
+  min-height: 56px;
+  height: 56px;
+}
+
+@media (max-width: 768px) {
+  .user-info-bar > .user-menu-container > .top-bar-btn,
+  .user-info-bar > .top-bar-btn {
+    min-height: 48px;
+    height: 48px;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-info-bar > .user-menu-container > .top-bar-btn,
+  .user-info-bar > .top-bar-btn {
+    min-height: 42px;
+    height: 42px;
+  }
+}

@@ -18,7 +18,7 @@ import './App.css'
 
 function App() {
   const { t, language, changeLanguage } = useLanguage()
-  const { currentCity, availableCities, userCities, changeCurrentCity, getCityName } = useCity()
+  const { currentCity, availableCities, userCities, changeCity, getCityName } = useCity()
   const [session, setSession] = useState(null)
   const [userRole, setUserRole] = useState(null)
   const [username, setUsername] = useState('') // 添加用户名状态
@@ -117,19 +117,19 @@ function App() {
                   {/* 用户资料按钮 */}
                   <div className="user-menu-container">
                     <button 
-                      className="user-profile-btn"
+                      className="top-bar-btn"
                       onClick={() => setShowUserMenu(!showUserMenu)}
                     >
-                      <span className="user-avatar">👤</span>
-                      <div className="user-details">
-                        <span className="user-name">{username}</span>
+                      <span className="btn-icon">👤</span>
+                      <div className="btn-content">
+                        <span className="btn-label">{username}</span>
                         {userRole && (
-                          <span className={`user-role ${getRoleBadge(userRole).class}`}>
+                          <span className={`btn-sublabel ${getRoleBadge(userRole).class}`}>
                             {getRoleBadge(userRole).text}
                           </span>
                         )}
                       </div>
-                      <span className="dropdown-arrow">▼</span>
+                      <span className="btn-arrow">▼</span>
                     </button>
                     
                     {/* 下拉菜单 */}
@@ -164,55 +164,36 @@ function App() {
                                       key={city.code}
                                       className={`city-option ${currentCity === city.code ? 'active' : ''}`}
                                       onClick={() => {
-                                        changeCurrentCity(city.code)
+                                        changeCity(city.code)
                                         setShowUserMenu(false)
                                       }}
                                     >
-                                      {getCityName(city.code)}
+                                      {getCityName(city.code, language)}
                                       {currentCity === city.code && <span className="check-icon">✓</span>}
                                     </button>
                                   ))}
                               </div>
                             </div>
                           )}
-                          
-                          {/* 语言选择 */}
-                          <div className="menu-section">
-                            <div className="menu-section-title">
-                              <span className="menu-icon">🌐</span>
-                              <span>{t('common.language')}</span>
-                            </div>
-                            <div className="language-list">
-                              <button
-                                className={`lang-option ${language === 'zh' ? 'active' : ''}`}
-                                onClick={() => {
-                                  changeLanguage('zh')
-                                  setShowUserMenu(false)
-                                }}
-                              >
-                                中文
-                                {language === 'zh' && <span className="check-icon">✓</span>}
-                              </button>
-                              <button
-                                className={`lang-option ${language === 'en' ? 'active' : ''}`}
-                                onClick={() => {
-                                  changeLanguage('en')
-                                  setShowUserMenu(false)
-                                }}
-                              >
-                                English
-                                {language === 'en' && <span className="check-icon">✓</span>}
-                              </button>
-                            </div>
-                          </div>
                         </div>
                       </>
                     )}
                   </div>
                   
+                  {/* 语言切换按钮 */}
+                  <button 
+                    className="top-bar-btn"
+                    onClick={() => changeLanguage(language === 'zh' ? 'en' : 'zh')}
+                  >
+                    <span className="btn-icon">🌐</span>
+                    <span className="btn-label-center">
+                      {language === 'zh' ? '中文' : 'English'}
+                    </span>
+                  </button>
+                  
                   {/* 退出登录按钮 */}
-                  <button onClick={handleLogout} className="btn-logout-primary">
-                    {t('auth.logout')}
+                  <button onClick={handleLogout} className="top-bar-btn">
+                    <span className="btn-label-center">{t('auth.logout')}</span>
                   </button>
                 </div>
                 
