@@ -24,10 +24,38 @@ export const CityProvider = ({ children }) => {
   const isLoadingRef = useRef(false)
   const hasLoadedRef = useRef(false)
 
-  // 只在挂载时加载一次
+  // 监听认证状态变化
   useEffect(() => {
+    // 初始加载
     if (!hasLoadedRef.current && !isLoadingRef.current) {
       loadUserCities()
+    }
+
+    // 监听登出事件，重置状态
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        console.log('🚪 CityContext: 用户已登出，重置状态')
+        // 重置所有状态
+        setCurrentCity('MIA')
+        setUserCities([])
+        setUserRole(null)
+        setLoading(false)
+        hasLoadedRef.current = false
+        isLoadingRef.current = false
+        // 清除本地存储
+        localStorage.removeItem('currentCity')
+      } else if (event === 'SIGNED_IN') {
+        console.log('🔑 CityContext: 用户已登录，重新加载权限')
+        // 重置加载标记
+        hasLoadedRef.current = false
+        isLoadingRef.current = false
+        // 重新加载用户权限
+        loadUserCities()
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
     }
   }, []) // 空依赖数组，只执行一次
 

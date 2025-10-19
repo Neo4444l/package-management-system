@@ -18,7 +18,7 @@ import './App.css'
 
 function App() {
   const { t, language, changeLanguage } = useLanguage()
-  const { currentCity, availableCities, userCities, changeCity, getCityName } = useCity()
+  const { currentCity, availableCities, userCities, changeCity, getCityName, hasMultipleCities } = useCity()
   const [session, setSession] = useState(null)
   const [userRole, setUserRole] = useState(null)
   const [username, setUsername] = useState('') // 添加用户名状态
@@ -82,7 +82,14 @@ function App() {
   }
 
   const handleLogout = async () => {
+    // 清除城市相关的本地缓存数据（保留语言设置）
+    localStorage.removeItem('currentCity')
+    
+    // 登出
     await supabase.auth.signOut()
+    
+    // 强制刷新页面，确保所有状态都被重置
+    window.location.href = '/'
   }
 
   if (loading) {
@@ -126,6 +133,14 @@ function App() {
                         {userRole && (
                           <span className={`btn-sublabel ${getRoleBadge(userRole).class}`}>
                             {getRoleBadge(userRole).text}
+                          </span>
+                        )}
+                        {/* 显示当前城市 */}
+                        {currentCity && (
+                          <span className="btn-sublabel city-label">
+                            <span className="city-icon-small">🏙️</span>
+                            {getCityName(currentCity, language)}
+                            {!hasMultipleCities() && <span className="city-lock-icon">🔒</span>}
                           </span>
                         )}
                       </div>

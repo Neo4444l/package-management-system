@@ -145,6 +145,30 @@
 }
 
 /* ========================================
+   城市标签样式
+   ======================================== */
+
+.city-label {
+  background: linear-gradient(135deg, #16a085 0%, #1abc9c 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.city-icon-small {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.city-lock-icon {
+  font-size: 8px;
+  margin-left: 2px;
+  opacity: 0.8;
+}
+
+/* ========================================
    用户菜单容器
    ======================================== */
 
