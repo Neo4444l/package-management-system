@@ -39,13 +39,20 @@ function App() {
     // 监听认证状态变化
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      if (session) {
-        fetchUserRole(session.user.id)
-      } else {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔐 App Auth 事件:', event)
+      
+      // 只在关键事件时更新状态，忽略 TOKEN_REFRESHED 等
+      if (event === 'SIGNED_OUT') {
+        setSession(null)
         setUserRole(null)
+      } else if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        setSession(session)
+        if (session) {
+          fetchUserRole(session.user.id)
+        }
       }
+      // 忽略其他事件（如 TOKEN_REFRESHED）
     })
 
     return () => subscription.unsubscribe()
