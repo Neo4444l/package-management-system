@@ -7,7 +7,7 @@ import './UserManagement.css'
 
 export default function UserManagement() {
   const navigate = useNavigate()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const { availableCities, isSuperAdmin } = useCity()
   const cityOptions = availableCities // 使用 availableCities 别名
   const [users, setUsers] = useState([])
@@ -417,7 +417,12 @@ export default function UserManagement() {
     if (!cities || cities.length === 0) return t('city.noCityAccess')
     return cities.map(code => {
       const city = cityOptions.find(c => c.code === code)
-      return city ? city.nameZh : code // 使用中文名称
+      // 中文环境显示中文名称，英文环境显示城市代号
+      if (language === 'zh') {
+        return city ? city.nameZh : code
+      } else {
+        return city ? city.code : code
+      }
     }).join(', ')
   }
   

@@ -183,6 +183,7 @@ export const zh = {
     shelvedPackages: '已上架包裹',
     noPackageRecords: '暂无包裹记录',
     addPackageHint: '请在上方输入框中添加包裹号',
+    invalidPackageNumber: '⚠️ 包裹号格式不正确！必须是"SWX"开头+18位数字（共21位）',
   },
 
   // 下架管理

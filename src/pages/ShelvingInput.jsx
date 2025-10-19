@@ -108,10 +108,22 @@ function ShelvingInput() {
       return
     }
 
+    // 验证包裹号格式：SWX开头 + 18位数字（共21位）
+    const trimmedPackageNumber = packageNumber.trim()
+    const packageRegex = /^SWX\d{18}$/
+    
+    if (!packageRegex.test(trimmedPackageNumber)) {
+      showNotification(t('shelving.invalidPackageNumber'), 'error')
+      // 清空输入框并重新聚焦
+      setPackageNumber('')
+      inputRef.current?.focus()
+      return
+    }
+
     try {
       // 创建新包裹记录并保存到 Supabase（传入当前城市）
       const newPackage = await addPackage({
-        packageNumber: packageNumber.trim(),
+        packageNumber: trimmedPackageNumber,
         location: locationId,
         city: currentCity // 添加城市字段
       })

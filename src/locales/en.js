@@ -183,6 +183,7 @@ export const en = {
     shelvedPackages: 'Shelved Packages',
     noPackageRecords: 'No package records',
     addPackageHint: 'Please add package numbers in the input field above',
+    invalidPackageNumber: '⚠️ Invalid package number! Must start with "SWX" followed by 18 digits (21 characters total)',
   },
 
   // Unshelving Management
