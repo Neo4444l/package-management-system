@@ -140,6 +140,7 @@ export const zh = {
     unshelvingDesc: '扫描包裹进行下架操作',
     returnDashboard: '退件看板',
     returnDashboardDesc: '查看退件数据和统计',
+    userManagementDesc: '管理系统用户和权限',
   },
 
   // 上架管理

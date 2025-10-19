@@ -140,6 +140,7 @@ export const en = {
     unshelvingDesc: 'Scan packages for removal',
     returnDashboard: 'Return Dashboard',
     returnDashboardDesc: 'View return data and statistics',
+    userManagementDesc: 'Manage system users and permissions',
   },
 
   // Shelving Management
