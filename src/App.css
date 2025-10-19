@@ -11,10 +11,10 @@
   right: 20px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   background: white;
-  padding: 10px 20px;
-  border-radius: 25px;
+  padding: 8px 16px;
+  border-radius: 20px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   animation: slideIn 0.3s ease-out;
@@ -31,30 +31,85 @@
   }
 }
 
-.user-email {
-  color: #555;
+/* 用户资料区域 */
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 8px;
+  border-right: 1px solid #e0e0e0;
+}
+
+.user-icon {
+  font-size: 16px;
+}
+
+.username {
+  color: #333;
+  font-weight: 600;
+  font-size: 14px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 紧凑角色徽章 */
+.role-badge-compact {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* 导航链接（用户管理等） */
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+  color: white;
+  border-radius: 12px;
+  text-decoration: none;
+  font-size: 12px;
   font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(39, 174, 96, 0.3);
+}
+
+.nav-icon {
   font-size: 14px;
 }
 
-.btn-logout {
-  padding: 8px 16px;
+.nav-text {
+  white-space: nowrap;
+}
+
+/* 紧凑退出按钮 */
+.btn-logout-compact {
+  padding: 6px 14px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 15px;
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
-.btn-logout:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+.btn-logout-compact:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
 }
 
-.btn-logout:active {
+.btn-logout-compact:active {
   transform: translateY(0);
 }
 
@@ -118,37 +173,42 @@
   transform: translateY(0);
 }
 
-/* 语言切换按钮（App用户栏） */
-.lang-switcher-app {
+/* 紧凑语言切换 */
+.lang-switcher-compact {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
   background: rgba(102, 126, 234, 0.05);
-  padding: 4px;
   border-radius: 12px;
 }
 
-.lang-btn-app {
-  padding: 6px 10px;
+.lang-btn-compact {
+  padding: 3px 6px;
   background: transparent;
   border: none;
-  border-radius: 8px;
   color: #666;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  min-width: 32px;
+  border-radius: 6px;
 }
 
-.lang-btn-app:hover {
-  background: rgba(102, 126, 234, 0.1);
+.lang-btn-compact:hover {
   color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
 }
 
-.lang-btn-app.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+.lang-btn-compact.active {
+  color: #667eea;
+  font-weight: 700;
+}
+
+.lang-divider {
+  color: #ccc;
+  font-size: 11px;
+  user-select: none;
 }
 
 /* 响应式设计 */
@@ -157,43 +217,57 @@
     top: 10px;
     right: 10px;
     left: 10px;
-    padding: 8px 12px;
-    gap: 8px;
+    padding: 6px 12px;
+    gap: 6px;
     flex-wrap: wrap;
     justify-content: center;
   }
 
-  .user-email {
-    font-size: 11px;
-    max-width: 120px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .user-profile {
+    padding-right: 6px;
   }
 
-  .user-role-badge {
-    font-size: 10px;
+  .user-icon {
+    font-size: 14px;
+  }
+
+  .username {
+    font-size: 12px;
+    max-width: 80px;
+  }
+
+  .role-badge-compact {
+    font-size: 9px;
+    padding: 2px 6px;
+  }
+
+  .nav-link {
+    padding: 5px 10px;
+    font-size: 11px;
+    gap: 3px;
+  }
+
+  .nav-icon {
+    font-size: 12px;
+  }
+
+  .btn-logout-compact {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  .lang-switcher-compact {
     padding: 3px 8px;
+    gap: 4px;
   }
 
-  .btn-manage-users {
-    padding: 6px 12px;
-    font-size: 11px;
-  }
-
-  .btn-logout {
-    padding: 6px 12px;
-    font-size: 11px;
-  }
-
-  .lang-switcher-app {
-    padding: 3px;
-  }
-
-  .lang-btn-app {
-    padding: 4px 8px;
+  .lang-btn-compact {
     font-size: 10px;
-    min-width: 28px;
+    padding: 2px 4px;
+  }
+
+  .lang-divider {
+    font-size: 10px;
   }
 }
 

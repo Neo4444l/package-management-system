@@ -19,6 +19,7 @@ function App() {
   const { t, language, changeLanguage } = useLanguage()
   const [session, setSession] = useState(null)
   const [userRole, setUserRole] = useState(null)
+  const [username, setUsername] = useState('') // 添加用户名状态
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -51,15 +52,17 @@ function App() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('role, is_active')
+        .select('role, is_active, username')
         .eq('id', userId)
         .single()
 
       if (error) throw error
       setUserRole(data?.role || 'user')
+      setUsername(data?.username || session?.user?.email?.split('@')[0] || 'User') // 使用用户名，或邮箱前缀
     } catch (error) {
       console.error('获取用户角色失败:', error)
       setUserRole('user')
+      setUsername(session?.user?.email?.split('@')[0] || 'User')
     } finally {
       setLoading(false)
     }
@@ -108,32 +111,40 @@ function App() {
             <Route path="*" element={
               <div className="App">
                 <div className="user-info">
-                  <span className="user-email">👤 {session.user.email}</span>
-                  {userRole && (
-                    <span className={`user-role-badge ${getRoleBadge(userRole).class}`}>
-                      {getRoleBadge(userRole).text}
-                    </span>
-                  )}
+                  {/* 用户名 + 角色徽章 */}
+                  <div className="user-profile">
+                    <span className="user-icon">👤</span>
+                    <span className="username">{username}</span>
+                    {userRole && (
+                      <span className={`role-badge-compact ${getRoleBadge(userRole).class}`}>
+                        {getRoleBadge(userRole).text}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* 用户管理链接（仅管理员） */}
                   {(userRole === 'admin' || userRole === 'super_admin') && (
-                    <a href="/user-management" className="btn-manage-users">
-                      👥 {t('userManagement.title')}
+                    <a href="/user-management" className="nav-link">
+                      <span className="nav-icon">👥</span>
+                      <span className="nav-text">{t('userManagement.title')}</span>
                     </a>
                   )}
                   
                   {/* 城市选择器 */}
                   <CitySelector />
                   
-                  {/* 语言切换按钮 */}
-                  <div className="lang-switcher-app">
+                  {/* 语言切换 */}
+                  <div className="lang-switcher-compact">
                     <button
-                      className={`lang-btn-app ${language === 'zh' ? 'active' : ''}`}
+                      className={`lang-btn-compact ${language === 'zh' ? 'active' : ''}`}
                       onClick={() => changeLanguage('zh')}
                       title="中文"
                     >
                       中
                     </button>
+                    <span className="lang-divider">|</span>
                     <button
-                      className={`lang-btn-app ${language === 'en' ? 'active' : ''}`}
+                      className={`lang-btn-compact ${language === 'en' ? 'active' : ''}`}
                       onClick={() => changeLanguage('en')}
                       title="English"
                     >
@@ -141,7 +152,8 @@ function App() {
                     </button>
                   </div>
                   
-                  <button onClick={handleLogout} className="btn-logout">
+                  {/* 退出登录 */}
+                  <button onClick={handleLogout} className="btn-logout-compact">
                     {t('auth.logout')}
                   </button>
                 </div>
