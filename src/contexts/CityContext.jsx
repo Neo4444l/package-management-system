@@ -34,6 +34,7 @@ export const CityProvider = ({ children }) => {
     // 监听登出事件，重置状态
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('🔐 Auth 事件:', event, session ? '有 session' : '无 session')
+      console.log('📊 hasLoadedRef:', hasLoadedRef.current, 'isLoadingRef:', isLoadingRef.current)
       
       if (event === 'SIGNED_OUT') {
         console.log('🚪 CityContext: 用户已登出，重置状态')
@@ -52,9 +53,13 @@ export const CityProvider = ({ children }) => {
         if (!hasLoadedRef.current) {
           loadUserCities()
         }
+      } else if (event === 'SIGNED_IN' && session && !hasLoadedRef.current) {
+        // 只在未加载过数据时才响应 SIGNED_IN（真正的新登录）
+        // 如果已经加载过（hasLoadedRef.current === true），则忽略（可能是 token 刷新触发的）
+        console.log('🔑 CityContext: 检测到新登录，加载权限')
+        loadUserCities()
       }
-      // 忽略 SIGNED_IN 和其他事件（如 TOKEN_REFRESHED, USER_UPDATED 等）
-      // 因为这些事件会在切换窗口时频繁触发，导致不必要的重新加载
+      // 忽略其他事件（如 TOKEN_REFRESHED, USER_UPDATED 等）
     })
 
     return () => {
