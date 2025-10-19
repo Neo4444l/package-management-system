@@ -493,6 +493,11 @@ function CenterReturnManagement() {
           <div className="header-icon">📊</div>
           <h1>{t('centerReturn.title')}</h1>
           <p>{t('centerReturn.subtitle')}</p>
+          {userRole && (
+            <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+              {t('roles.role')}: <strong>{t(`roles.${userRole}`)}</strong>
+            </div>
+          )}
         </div>
 
         <div className="search-section">
@@ -646,7 +651,7 @@ function CenterReturnManagement() {
             >
               {t('centerReturn.exportData')} 📊
             </button>
-            {(userRole === 'admin' || userRole === 'manager') && (
+            {(userRole === 'super_admin' || userRole === 'admin' || userRole === 'manager') && (
               <button
                 className="action-button"
                 onClick={() => setShowActionModal(true)}
@@ -655,7 +660,7 @@ function CenterReturnManagement() {
                 {t('centerReturn.issueInstruction')} 📋
               </button>
             )}
-            {userRole === 'admin' && (
+            {(userRole === 'super_admin' || userRole === 'admin') && (
               <button
                 className="delete-button-batch"
                 onClick={handleBatchDelete}
@@ -695,7 +700,7 @@ function CenterReturnManagement() {
                   <th>{t('centerReturn.instructionTime')}</th>
                   <th>{t('centerReturn.unshelvingTime')}</th>
                   <th>{t('centerReturn.lastOperator')}</th>
-                  {(userRole === 'admin' || userRole === 'manager') && <th>{t('centerReturn.actions')}</th>}
+                  {(userRole === 'super_admin' || userRole === 'admin' || userRole === 'manager') && <th>{t('centerReturn.actions')}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -716,7 +721,7 @@ function CenterReturnManagement() {
                     <td className="package-time">{pkg.instruction_time_display || pkg.instructionTimeDisplay || '-'}</td>
                     <td className="package-time">{pkg.unshelving_time_display || pkg.unshelvingTimeDisplay || '-'}</td>
                     <td><span className="username-badge">{pkg.last_modified_by_username}</span></td>
-                    {(userRole === 'admin' || userRole === 'manager') && (
+                    {(userRole === 'super_admin' || userRole === 'admin' || userRole === 'manager') && (
                       <td>
                         <button
                           className="quick-action-button"
