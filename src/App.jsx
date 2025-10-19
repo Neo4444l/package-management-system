@@ -100,10 +100,11 @@ function App() {
       await supabase.auth.signOut()
       console.log('✅ Supabase 登出成功')
       
-      // 3. 强制刷新页面并清除缓存
-      console.log('🔄 准备刷新页面...')
+      // 3. 等待一下确保登出事件处理完成
+      await new Promise(resolve => setTimeout(resolve, 300))
       
-      // 使用 location.reload(true) 强制从服务器重新加载
+      // 4. 强制刷新页面并清除缓存
+      console.log('🔄 准备刷新页面...')
       window.location.reload()
     } catch (error) {
       console.error('❌ 登出失败:', error)
