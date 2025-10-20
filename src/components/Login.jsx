@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient'
 import { useLanguage } from '../contexts/LanguageContext'
 import './Login.css'
 
-export default function Login({ onLogin }) {
+export default function Login() {
   const { t, language, changeLanguage } = useLanguage()
   const [loading, setLoading] = useState(false)
   const [showResetPassword, setShowResetPassword] = useState(false)
@@ -26,10 +26,7 @@ export default function Login({ onLogin }) {
 
       if (error) throw error
       
-      // 登录成功，传递 session 而不是 user
-      if (data.session) {
-        onLogin(data.session)
-      }
+      // 登录成功，UserContext 会自动通过 onAuthStateChange 更新状态
     } catch (error) {
       setError(error.message)
     } finally {

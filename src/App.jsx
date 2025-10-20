@@ -81,7 +81,7 @@ function App() {
         
         {/* 需要登录的路由 */}
         {!session ? (
-          <Route path="*" element={<Login onLogin={setSession} />} />
+          <Route path="*" element={<Login />} />
         ) : (
           <>
             <Route path="*" element={
