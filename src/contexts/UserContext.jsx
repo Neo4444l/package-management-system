@@ -36,10 +36,13 @@ export const UserProvider = ({ children }) => {
         setSession(null)
         setUserRole(null)
         setUsername('')
+        setLoading(false) // 重要：登出后设置 loading 为 false
       } else if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         setSession(session)
         if (session) {
           fetchUserRole(session.user.id)
+        } else {
+          setLoading(false)
         }
       }
     })
