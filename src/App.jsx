@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import { useLanguage } from './contexts/LanguageContext'
+import { useUser } from './contexts/UserContext'
 import { useCity } from './contexts/CityContext'
 import CitySelector from './components/CitySelector'
 import Login from './components/Login'
@@ -18,65 +19,9 @@ import './App.css'
 
 function App() {
   const { t, language, changeLanguage } = useLanguage()
+  const { session, userRole, username, loading } = useUser()
   const { currentCity, availableCities, userCities, changeCity, getCityName, hasMultipleCities } = useCity()
-  const [session, setSession] = useState(null)
-  const [userRole, setUserRole] = useState(null)
-  const [username, setUsername] = useState('') // 添加用户名状态
-  const [loading, setLoading] = useState(true)
   const [showUserMenu, setShowUserMenu] = useState(false) // 用户菜单显示状态
-
-  useEffect(() => {
-    // 检查当前session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      if (session) {
-        fetchUserRole(session.user.id)
-      } else {
-        setLoading(false)
-      }
-    })
-
-    // 监听认证状态变化
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('🔐 App Auth 事件:', event)
-      
-      // 只在关键事件时更新状态，忽略 TOKEN_REFRESHED 等
-      if (event === 'SIGNED_OUT') {
-        setSession(null)
-        setUserRole(null)
-      } else if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-        setSession(session)
-        if (session) {
-          fetchUserRole(session.user.id)
-        }
-      }
-      // 忽略其他事件（如 TOKEN_REFRESHED）
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  const fetchUserRole = async (userId) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('role, is_active, username')
-        .eq('id', userId)
-        .single()
-
-      if (error) throw error
-      setUserRole(data?.role || 'user')
-      setUsername(data?.username || session?.user?.email?.split('@')[0] || 'User') // 使用用户名，或邮箱前缀
-    } catch (error) {
-      console.error('获取用户角色失败:', error)
-      setUserRole('user')
-      setUsername(session?.user?.email?.split('@')[0] || 'User')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const getRoleBadge = (role) => {
     const badges = {
@@ -175,18 +120,6 @@ function App() {
                       <>
                         <div className="menu-overlay" onClick={() => setShowUserMenu(false)} />
                         <div className="user-dropdown-menu">
-                          {/* 用户管理（仅管理员） */}
-                          {(userRole === 'admin' || userRole === 'super_admin') && (
-                            <a 
-                              href="/user-management" 
-                              className="menu-item"
-                              onClick={() => setShowUserMenu(false)}
-                            >
-                              <span className="menu-icon">👥</span>
-                              <span className="menu-text">{t('userManagement.title')}</span>
-                            </a>
-                          )}
-                          
                           {/* 城市选择 - 仅在有多个城市权限时显示 */}
                           {userCities && userCities.length > 1 && (
                             <div className="menu-section">

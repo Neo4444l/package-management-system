@@ -1,39 +1,15 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../supabaseClient'
 import { useLanguage } from '../contexts/LanguageContext'
+import { useUser } from '../contexts/UserContext'
 import './HomePage.css'
 import packageInfo from '../../package.json'
 
 function HomePage() {
   const navigate = useNavigate()
   const { t } = useLanguage()
+  const { userRole } = useUser()
   const version = packageInfo.version
-  const [userRole, setUserRole] = useState(null)
-
-  // 加载用户角色
-  useEffect(() => {
-    loadUserRole()
-  }, [])
-
-  const loadUserRole = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single()
-        
-        if (profile) {
-          setUserRole(profile.role)
-        }
-      }
-    } catch (error) {
-      console.error('获取用户角色失败:', error)
-    }
-  }
 
   const modules = [
     {
@@ -66,7 +42,7 @@ function HomePage() {
   if (userRole === 'admin' || userRole === 'super_admin') {
     modules.push({
       id: 'user-management',
-      title: t('nav.userManagement'),
+      title: t('userManagement.title'),
       description: t('home.userManagementDesc'),
       icon: '👥',
       color: '#9C27B0',
