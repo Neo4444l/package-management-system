@@ -58,7 +58,7 @@ function HomePage() {
           <p className="home-subtitle">Return Package Management System</p>
         </header>
 
-        <div className="modules-grid">
+        <div className={`modules-grid ${modules.length === 4 ? 'grid-2x2' : 'grid-1x3'}`}>
           {modules.map((module) => (
             <div
               key={module.id}
