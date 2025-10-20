@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext, useRef } from 'react'
 import { supabase } from '../supabaseClient'
+import { useUser } from './UserContext'
 
 const CityContext = createContext()
 
@@ -13,6 +14,7 @@ export const AVAILABLE_CITIES = [
 ]
 
 export const CityProvider = ({ children }) => {
+  const { session, userRole: contextUserRole, loading: userLoading } = useUser()
   const [currentCity, setCurrentCity] = useState(() => {
     return localStorage.getItem('currentCity') || 'MIA'
   })
@@ -23,49 +25,39 @@ export const CityProvider = ({ children }) => {
   // 使用 ref 防止重复加载
   const isLoadingRef = useRef(false)
   const hasLoadedRef = useRef(false)
-
-  // 监听认证状态变化
+  
+  // 同步 userRole
   useEffect(() => {
-    // 初始加载
-    if (!hasLoadedRef.current && !isLoadingRef.current) {
+    if (contextUserRole) {
+      setUserRole(contextUserRole)
+    }
+  }, [contextUserRole])
+
+  // 监听认证状态变化 - 基于 UserContext 的 session
+  useEffect(() => {
+    console.log('🔐 CityContext: session 变化', session ? '有 session' : '无 session', 'userLoading:', userLoading)
+    
+    if (userLoading) {
+      // 如果 UserContext 还在加载，等待
+      return
+    }
+    
+    if (session && !hasLoadedRef.current && !isLoadingRef.current) {
+      // 有 session 且未加载过，开始加载
+      console.log('🔑 CityContext: 开始加载城市权限')
       loadUserCities()
+    } else if (!session) {
+      // 没有 session，重置状态
+      console.log('🚪 CityContext: 无 session，重置状态')
+      setCurrentCity('MIA')
+      setUserCities([])
+      setUserRole(null)
+      setLoading(false)
+      hasLoadedRef.current = false
+      isLoadingRef.current = false
+      localStorage.removeItem('currentCity')
     }
-
-    // 监听登出事件，重置状态
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('🔐 Auth 事件:', event, session ? '有 session' : '无 session')
-      console.log('📊 hasLoadedRef:', hasLoadedRef.current, 'isLoadingRef:', isLoadingRef.current)
-      
-      if (event === 'SIGNED_OUT') {
-        console.log('🚪 CityContext: 用户已登出，重置状态')
-        // 重置所有状态
-        setCurrentCity('MIA')
-        setUserCities([])
-        setUserRole(null)
-        setLoading(false)
-        hasLoadedRef.current = false
-        isLoadingRef.current = false
-        // 清除本地存储
-        localStorage.removeItem('currentCity')
-      } else if (event === 'INITIAL_SESSION' && session) {
-        // 只在初始 session 时加载，忽略后续的 TOKEN_REFRESHED 等事件
-        console.log('🔑 CityContext: 初始 session，加载权限')
-        if (!hasLoadedRef.current) {
-          loadUserCities()
-        }
-      } else if (event === 'SIGNED_IN' && session && !hasLoadedRef.current) {
-        // 只在未加载过数据时才响应 SIGNED_IN（真正的新登录）
-        // 如果已经加载过（hasLoadedRef.current === true），则忽略（可能是 token 刷新触发的）
-        console.log('🔑 CityContext: 检测到新登录，加载权限')
-        loadUserCities()
-      }
-      // 忽略其他事件（如 TOKEN_REFRESHED, USER_UPDATED 等）
-    })
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, []) // 空依赖数组，只执行一次
+  }, [session, userLoading])
 
   const loadUserCities = async () => {
     // 防止重复调用
