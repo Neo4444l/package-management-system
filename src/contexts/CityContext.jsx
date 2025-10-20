@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext, useRef } from 'react'
+import React, { createContext, useState, useEffect, useContext, useRef, useCallback } from 'react'
 import { supabase } from '../supabaseClient'
 import { useUser } from './UserContext'
 
@@ -33,33 +33,7 @@ export const CityProvider = ({ children }) => {
     }
   }, [contextUserRole])
 
-  // 监听认证状态变化 - 基于 UserContext 的 session
-  useEffect(() => {
-    console.log('🔐 CityContext: session 变化', session ? '有 session' : '无 session', 'userLoading:', userLoading)
-    
-    if (userLoading) {
-      // 如果 UserContext 还在加载，等待
-      return
-    }
-    
-    if (session && !hasLoadedRef.current && !isLoadingRef.current) {
-      // 有 session 且未加载过，开始加载
-      console.log('🔑 CityContext: 开始加载城市权限')
-      loadUserCities()
-    } else if (!session) {
-      // 没有 session，重置状态
-      console.log('🚪 CityContext: 无 session，重置状态')
-      setCurrentCity('MIA')
-      setUserCities([])
-      setUserRole(null)
-      setLoading(false)
-      hasLoadedRef.current = false
-      isLoadingRef.current = false
-      localStorage.removeItem('currentCity')
-    }
-  }, [session, userLoading])
-
-  const loadUserCities = async () => {
+  const loadUserCities = useCallback(async () => {
     // 防止重复调用
     if (isLoadingRef.current || hasLoadedRef.current) {
       console.log('⚠️ CityContext: 已经在加载或已加载，跳过')
@@ -168,7 +142,33 @@ export const CityProvider = ({ children }) => {
       setLoading(false)
       isLoadingRef.current = false
     }
-  }
+  }, []) // loadUserCities 不依赖任何外部变量，空数组即可
+
+  // 监听认证状态变化 - 基于 UserContext 的 session
+  useEffect(() => {
+    console.log('🔐 CityContext: session 变化', session ? '有 session' : '无 session', 'userLoading:', userLoading)
+    
+    if (userLoading) {
+      // 如果 UserContext 还在加载，等待
+      return
+    }
+    
+    if (session && !hasLoadedRef.current && !isLoadingRef.current) {
+      // 有 session 且未加载过，开始加载
+      console.log('🔑 CityContext: 开始加载城市权限')
+      loadUserCities()
+    } else if (!session) {
+      // 没有 session，重置状态
+      console.log('🚪 CityContext: 无 session，重置状态')
+      setCurrentCity('MIA')
+      setUserCities([])
+      setUserRole(null)
+      setLoading(false)
+      hasLoadedRef.current = false
+      isLoadingRef.current = false
+      localStorage.removeItem('currentCity')
+    }
+  }, [session, userLoading, loadUserCities])
 
   const changeCity = async (cityCode) => {
     console.log('🔄 CityContext: 请求切换城市 -', currentCity, '→', cityCode)
