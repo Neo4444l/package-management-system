@@ -279,7 +279,7 @@ function LocationManagement() {
             page-break-inside: avoid;
             box-sizing: border-box;
             position: relative;
-            padding: 0.3cm;
+            padding: 0.8cm 0.5cm;
           }
           /* 内容容器 - 确保完全居中 */
           .qr-content {
@@ -287,34 +287,34 @@ function LocationManagement() {
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 0.3cm;
+            gap: 0.4cm;
             width: 100%;
             height: 100%;
           }
           .qr-item canvas {
             display: block;
             /* 二维码大小，占据大部分空间 */
-            width: 7.5cm !important;
-            height: 7.5cm !important;
+            width: 6.5cm !important;
+            height: 6.5cm !important;
             margin: 0;
             flex-shrink: 0;
           }
           .qr-code {
-            font-size: 56px;
+            font-size: 60px;
             font-weight: bold;
             margin: 0;
             color: #000;
             text-align: center;
-            letter-spacing: 4px;
-            line-height: 1;
+            letter-spacing: 5px;
+            line-height: 1.1;
             flex-shrink: 0;
           }
           .qr-date {
-            font-size: 20px;
+            font-size: 22px;
             color: #666;
             text-align: center;
             margin: 0;
-            line-height: 1.2;
+            line-height: 1.3;
             flex-shrink: 0;
           }
           @media print {
@@ -327,8 +327,9 @@ function LocationManagement() {
               background-color: white;
             }
             .qr-item {
-              border: none;
+              border: none !important;
               background-color: white;
+              padding: 0.8cm 0.5cm !important;
             }
             .qr-grid {
               gap: 5mm;
@@ -354,9 +355,9 @@ function LocationManagement() {
       qrContent.className = 'qr-content'
 
       const canvas = printWindow.document.createElement('canvas')
-      // 设置二维码尺寸为 7.5cm
+      // 设置二维码尺寸为 6.5cm
       await QRCode.toCanvas(canvas, location.code, {
-        width: 283,  // 7.5cm ≈ 283px at 96 DPI
+        width: 245,  // 6.5cm ≈ 245px at 96 DPI
         margin: 1,
         errorCorrectionLevel: 'H',  // 高容错率
         color: {
