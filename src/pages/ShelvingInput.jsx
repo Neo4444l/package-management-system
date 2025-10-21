@@ -16,6 +16,7 @@ function ShelvingInput() {
   const [notification, setNotification] = useState(null)
   const [isOnline, setIsOnline] = useState(true)
   const inputRef = useRef(null)
+  const audioRef = useRef(null)
 
   // 从 Supabase 加载已保存的包裹数据（城市过滤）
   useEffect(() => {
@@ -100,6 +101,13 @@ function ShelvingInput() {
     setTimeout(() => setNotification(null), 3000)
   }
 
+  const playSound = () => {
+    // 播放提示音
+    if (audioRef.current) {
+      audioRef.current.play().catch(err => console.log('Audio play failed:', err))
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     
@@ -120,6 +128,20 @@ function ShelvingInput() {
       return
     }
 
+    // ✅ 检查是否已存在相同的包裹号（防止重复扫描）
+    const isDuplicate = packages.some(pkg => {
+      const existingNumber = pkg.package_number || pkg.packageNumber
+      return existingNumber === trimmedPackageNumber
+    })
+    
+    if (isDuplicate) {
+      showNotification(`⚠️ ${t('shelving.duplicatePackage')}: ${trimmedPackageNumber}`, 'error')
+      // 清空输入框并重新聚焦
+      setPackageNumber('')
+      inputRef.current?.focus()
+      return
+    }
+
     try {
       // 创建新包裹记录并保存到 Supabase（传入当前城市）
       const newPackage = await addPackage({
@@ -130,6 +152,9 @@ function ShelvingInput() {
 
       // 更新当前显示的列表
       setPackages([newPackage, ...packages])
+      
+      // ✅ 播放成功提示音
+      playSound()
       
       // 清空输入框并显示通知
       setPackageNumber('')
@@ -205,6 +230,9 @@ function ShelvingInput() {
           {notification.message}
         </div>
       )}
+
+      {/* 提示音 */}
+      <audio ref={audioRef} src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUKjo77RgGwU7k9n0yHkpBSh+zPLaizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBSh+zPDbizsIHG3A8eiXSQwJTaXm8bhcFQlDnOH3vGkdBCx+zPLaizsIG2y+8eqZTAsPUKfo77RgGwU6k9j0yHkpBQ=="></audio>
 
       <div className="shelving-input-container">
         <button className="back-button" onClick={() => navigate('/shelving')}>
