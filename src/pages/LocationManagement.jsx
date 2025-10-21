@@ -273,7 +273,7 @@ function LocationManagement() {
             border: 1px dashed #ccc;
             background-color: white;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
             justify-content: center;
             page-break-inside: avoid;
@@ -286,32 +286,28 @@ function LocationManagement() {
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 100%;
-            height: 100%;
-            padding: 1cm;
+            gap: 0.4cm;
           }
           .qr-item canvas {
             display: block;
             /* 二维码大小，确保在框内 */
             width: 6cm !important;
             height: 6cm !important;
-            margin: 0 auto;
+            margin: 0;
           }
           .qr-code {
             font-size: 32px;
             font-weight: bold;
-            margin: 0.5cm 0 0.3cm 0;
+            margin: 0;
             color: #000;
             text-align: center;
-            width: 100%;
             letter-spacing: 2px;
           }
           .qr-date {
             font-size: 14px;
             color: #666;
             text-align: center;
-            width: 100%;
-            margin-top: 0.2cm;
+            margin: 0;
           }
           @media print {
             @page {
