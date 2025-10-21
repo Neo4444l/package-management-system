@@ -270,10 +270,10 @@ function LocationManagement() {
             gap: 5mm;
             padding: 5mm;
           }
-          /* 每个标签占据 15cm x 10cm (6" x 4") */
+          /* 每个标签占据 10cm x 15cm (竖版) */
           .qr-item {
-            width: 15cm;
-            height: 10cm;
+            width: 10cm;
+            height: 15cm;
             border: 2px dashed #ccc;
             background-color: white;
             display: flex;
@@ -292,7 +292,7 @@ function LocationManagement() {
             gap: 0.5cm;
             width: 100%;
             height: 100%;
-            padding: 0.8cm;
+            padding: 1cm;
           }
           .qr-item canvas {
             display: block;
@@ -301,16 +301,16 @@ function LocationManagement() {
             margin: 0;
           }
           .qr-code {
-            font-size: 52px;
+            font-size: 26px;
             font-weight: bold;
             margin: 0;
             color: #000;
             text-align: center;
-            letter-spacing: 4px;
+            letter-spacing: 2px;
             line-height: 1.1;
           }
           .qr-date {
-            font-size: 17px;
+            font-size: 12px;
             color: #666;
             text-align: center;
             margin: 0;
@@ -318,11 +318,11 @@ function LocationManagement() {
           }
           @media print {
             html, body {
-              width: 15cm;
-              height: 10cm;
+              width: 10cm;
+              height: 15cm;
             }
             @page {
-              size: 15cm 10cm;
+              size: 10cm 15cm;
               margin: 0;
             }
             body {
@@ -336,8 +336,8 @@ function LocationManagement() {
               margin: 0;
             }
             .qr-item {
-              width: 15cm;
-              height: 10cm;
+              width: 10cm;
+              height: 15cm;
               border: none !important;
               background-color: white;
               margin: 0;
@@ -351,7 +351,7 @@ function LocationManagement() {
               page-break-after: auto;
             }
             .qr-content {
-              padding: 0.8cm;
+              padding: 1cm;
             }
           }
           @media screen {
