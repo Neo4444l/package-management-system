@@ -279,7 +279,7 @@ function LocationManagement() {
             page-break-inside: avoid;
             box-sizing: border-box;
             position: relative;
-            padding: 0;
+            padding: 0.4cm 0.5cm;
           }
           /* 内容容器 - 确保完全居中 */
           .qr-content {
@@ -287,33 +287,35 @@ function LocationManagement() {
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 0.3cm;
+            gap: 0.35cm;
           }
           .qr-item canvas {
             display: block;
-            /* 二维码超大，占据大部分空间 */
-            width: 8cm !important;
-            height: 8cm !important;
+            /* 二维码超大，像SwiftX一样占据主要空间 */
+            width: 9cm !important;
+            height: 9cm !important;
             margin: 0;
             flex-shrink: 0;
           }
           .qr-code {
-            font-size: 42px;
-            font-weight: bold;
+            font-size: 64px;
+            font-weight: 900;
             margin: 0;
             color: #000;
             text-align: center;
-            letter-spacing: 3px;
-            line-height: 1.1;
+            letter-spacing: 6px;
+            line-height: 1;
             flex-shrink: 0;
+            text-transform: uppercase;
           }
           .qr-date {
-            font-size: 16px;
-            color: #666;
+            font-size: 18px;
+            color: #555;
             text-align: center;
             margin: 0;
-            line-height: 1.2;
+            line-height: 1.1;
             flex-shrink: 0;
+            font-weight: 500;
           }
           @media print {
             @page {
@@ -327,7 +329,7 @@ function LocationManagement() {
             .qr-item {
               border: none !important;
               background-color: white;
-              padding: 0 !important;
+              padding: 0.4cm 0.5cm !important;
             }
             .qr-grid {
               gap: 5mm;
@@ -353,9 +355,9 @@ function LocationManagement() {
       qrContent.className = 'qr-content'
 
       const canvas = printWindow.document.createElement('canvas')
-      // 设置二维码尺寸为 8cm（超大）
+      // 设置二维码尺寸为 9cm（超大，像SwiftX一样）
       await QRCode.toCanvas(canvas, location.code, {
-        width: 302,  // 8cm ≈ 302px at 96 DPI
+        width: 340,  // 9cm ≈ 340px at 96 DPI
         margin: 1,
         errorCorrectionLevel: 'H',  // 高容错率
         color: {
