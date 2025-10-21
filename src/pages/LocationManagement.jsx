@@ -268,8 +268,7 @@ function LocationManagement() {
           }
           /* 每个二维码占据 15cm x 10cm 的标签 */
           .qr-item {
-            width: 100%;
-            max-width: 15cm;
+            width: 15cm;
             height: 10cm;
             border: 1px dashed #ccc;
             background-color: white;
@@ -278,22 +277,30 @@ function LocationManagement() {
             align-items: center;
             justify-content: center;
             page-break-inside: avoid;
-            padding: 0.8cm;
             box-sizing: border-box;
+            position: relative;
+          }
+          /* 内容容器 - 确保完全居中 */
+          .qr-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            padding: 1cm;
           }
           .qr-item canvas {
             display: block;
-            margin: 0 auto 0.4cm auto;
             /* 二维码大小，确保在框内 */
             width: 6cm !important;
             height: 6cm !important;
-            max-width: 100%;
-            max-height: auto;
+            margin: 0 auto;
           }
           .qr-code {
             font-size: 32px;
             font-weight: bold;
-            margin: 0.3cm 0 0.2cm 0;
+            margin: 0.5cm 0 0.3cm 0;
             color: #000;
             text-align: center;
             width: 100%;
@@ -304,7 +311,7 @@ function LocationManagement() {
             color: #666;
             text-align: center;
             width: 100%;
-            margin-top: 0.1cm;
+            margin-top: 0.2cm;
           }
           @media print {
             @page {
@@ -338,6 +345,10 @@ function LocationManagement() {
       const qrItem = printWindow.document.createElement('div')
       qrItem.className = 'qr-item'
 
+      // 创建内容容器
+      const qrContent = printWindow.document.createElement('div')
+      qrContent.className = 'qr-content'
+
       const canvas = printWindow.document.createElement('canvas')
       // 设置二维码尺寸为 6cm
       await QRCode.toCanvas(canvas, location.code, {
@@ -369,9 +380,13 @@ function LocationManagement() {
                          }).replace(/\//g, '-') : '-')
       dateDiv.textContent = `${t('locationManagement.createdTime')}: ${displayDate}`
 
-      qrItem.appendChild(canvas)
-      qrItem.appendChild(codeDiv)
-      qrItem.appendChild(dateDiv)
+      // 将所有内容添加到内容容器
+      qrContent.appendChild(canvas)
+      qrContent.appendChild(codeDiv)
+      qrContent.appendChild(dateDiv)
+      
+      // 将内容容器添加到qrItem
+      qrItem.appendChild(qrContent)
       container.appendChild(qrItem)
     }
 
