@@ -168,6 +168,7 @@ export const zh = {
     shelvingFailed: '上架失败',
     packageExists: '包裹已存在，请勿重复上架',
     duplicatePackage: '该包裹已在当前库位，请勿重复扫描',
+    alreadyInLocation: '已在库位',
     backToHome: '返回首页',
     backToLocationSelect: '返回选择库位',
     offline: '连接已断开，正在重连...',

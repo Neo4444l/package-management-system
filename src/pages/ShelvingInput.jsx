@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
-import { addPackage, getPackagesByLocation, deletePackage } from '../services/dataService'
+import { addPackage, getPackagesByLocation, deletePackage, getAllPackages } from '../services/dataService'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useCity } from '../contexts/CityContext'
 import './ShelvingInput.css'
@@ -128,21 +128,27 @@ function ShelvingInput() {
       return
     }
 
-    // ✅ 检查是否已存在相同的包裹号（防止重复扫描）
-    const isDuplicate = packages.some(pkg => {
-      const existingNumber = pkg.package_number || pkg.packageNumber
-      return existingNumber === trimmedPackageNumber
-    })
-    
-    if (isDuplicate) {
-      showNotification(`⚠️ ${t('shelving.duplicatePackage')}: ${trimmedPackageNumber}`, 'error')
-      // 清空输入框并重新聚焦
-      setPackageNumber('')
-      inputRef.current?.focus()
-      return
-    }
-
     try {
+      // ✅ 检查整个地区是否已存在相同的包裹号（排除已下架的包裹）
+      const allPackagesInCity = await getAllPackages(currentCity)
+      const existingPackage = allPackagesInCity.find(pkg => {
+        const existingNumber = pkg.package_number || pkg.packageNumber
+        const status = pkg.package_status || pkg.packageStatus
+        // 只检查未下架的包裹（已下架的可以重新上架）
+        return existingNumber === trimmedPackageNumber && status !== 'removed'
+      })
+      
+      if (existingPackage) {
+        const existingLocation = existingPackage.location
+        showNotification(
+          `⚠️ ${t('shelving.duplicatePackage')}: ${trimmedPackageNumber} ${t('shelving.alreadyInLocation')} ${existingLocation}`,
+          'error'
+        )
+        // 清空输入框并重新聚焦
+        setPackageNumber('')
+        inputRef.current?.focus()
+        return
+      }
       // 创建新包裹记录并保存到 Supabase（传入当前城市）
       const newPackage = await addPackage({
         packageNumber: trimmedPackageNumber,

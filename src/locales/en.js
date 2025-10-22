@@ -168,6 +168,7 @@ export const en = {
     shelvingFailed: 'Shelving failed',
     packageExists: 'Package already exists, do not duplicate',
     duplicatePackage: 'This package is already in this location, do not scan again',
+    alreadyInLocation: 'already in location',
     backToHome: 'Back to Home',
     backToLocationSelect: 'Back to Location Selection',
     offline: 'Connection lost, reconnecting...',
