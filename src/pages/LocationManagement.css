@@ -287,10 +287,13 @@
 }
 
 .location-code {
-  font-size: 1.3rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: #333;
   margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .location-date {
