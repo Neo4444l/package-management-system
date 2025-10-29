@@ -171,13 +171,6 @@ function ShelvingPage() {
             </div>
           ) : (
             <>
-              <div className="location-header-info">
-                <div className="stat-item">
-                  <div className="stat-value">{locations.length}</div>
-                  <div className="stat-label">{t('shelving.selectLocation') || '可用库位'}</div>
-                </div>
-              </div>
-
               <div className="location-grid">
                 {locations.map((location) => {
                   const count = packageCounts[location.code] || 0
