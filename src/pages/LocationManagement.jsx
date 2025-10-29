@@ -518,8 +518,10 @@ function LocationManagement() {
 
         <div className="location-header">
           <div className="header-icon">📍</div>
-          <h1>{t('locationManagement.title')}</h1>
-          <p>{t('locationManagement.subtitle')}</p>
+          <div className="header-content">
+            <h1>{t('locationManagement.title')}</h1>
+            <p>{t('locationManagement.subtitle')}</p>
+          </div>
         </div>
 
         <form className="location-form" onSubmit={handleAddLocation}>
