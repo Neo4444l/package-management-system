@@ -579,28 +579,30 @@ function LocationManagement() {
                   key={location.id}
                   className={`location-card ${selectedLocations.includes(location.id) ? 'selected' : ''}`}
                 >
-                  <input
-                    type="checkbox"
-                    className="location-checkbox"
-                    checked={selectedLocations.includes(location.id)}
-                    onChange={() => handleSelectLocation(location.id)}
-                  />
-                  <div className="location-info">
-                    <div className="location-header">
-                      <div className="location-code">{location.code}</div>
-                      <span className="package-count-badge">
-                        {packageCounts[location.code] !== undefined ? packageCounts[location.code] : '...'} {t('shelving.packages')}
-                      </span>
+                  <div className="location-card-top">
+                    <input
+                      type="checkbox"
+                      className="location-checkbox"
+                      checked={selectedLocations.includes(location.id)}
+                      onChange={() => handleSelectLocation(location.id)}
+                    />
+                    <div className="location-info">
+                      <div className="location-header">
+                        <div className="location-code">{location.code}</div>
+                        <span className="package-count-badge">
+                          {packageCounts[location.code] !== undefined ? packageCounts[location.code] : '...'} {t('shelving.packages')}
+                        </span>
+                      </div>
+                      <div className="location-date">{location.created_at_display || location.createdAtDisplay}</div>
                     </div>
-                    <div className="location-date">{location.created_at_display || location.createdAtDisplay}</div>
+                    <button
+                      className="delete-button"
+                      onClick={() => handleDeleteLocation(location.id)}
+                      title={t('locationManagement.deleteLocation')}
+                    >
+                      🗑️
+                    </button>
                   </div>
-                  <button
-                    className="delete-button"
-                    onClick={() => handleDeleteLocation(location.id)}
-                    title={t('locationManagement.deleteLocation')}
-                  >
-                    🗑️
-                  </button>
                 </div>
               ))}
             </div>
