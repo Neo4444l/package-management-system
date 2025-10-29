@@ -407,8 +407,8 @@
 
 .package-item-compact .package-number {
   font-weight: 600;
-  color: #333;
-  font-size: 1rem;
+  color: #666;
+  font-size: 0.9rem;
 }
 
 .status-badge-small {

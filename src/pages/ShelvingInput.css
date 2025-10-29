@@ -268,9 +268,9 @@
 }
 
 .package-number {
-  font-size: 1.2rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  color: #333;
+  color: #666;
   margin-bottom: 5px;
 }
 
@@ -328,7 +328,7 @@
   }
 
   .package-number {
-    font-size: 1.1rem;
+    font-size: 0.9rem;
   }
 }
 
