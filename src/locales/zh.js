@@ -233,7 +233,7 @@ export const zh = {
     removed: '已下架',
     totalPackages: '总包裹数',
     reDispatch: '重派',
-    reDispatchNewLabel: '重派（新面单）',
+    reDispatchNewLabel: '重派 (新面单)',
     returnToCustomer: '退回客户',
   },
 
@@ -346,7 +346,7 @@ export const zh = {
   // 客服指令
   customerService: {
     're-dispatch': '重派',
-    're-dispatch-new-label': '重派（新面单）',
+    're-dispatch-new-label': '重派 (新面单)',
     'return-to-customer': '退回客户',
     none: '-',
   },

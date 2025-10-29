@@ -398,6 +398,7 @@
   background: white;
   border-radius: 8px;
   transition: all 0.3s ease;
+  gap: 10px;
 }
 
 .package-item-compact:hover {
@@ -409,6 +410,8 @@
   font-weight: 600;
   color: #666;
   font-size: 0.9rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .status-badge-small {
@@ -417,7 +420,13 @@
   color: white;
   font-size: 0.85rem;
   font-weight: 500;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: keep-all;
+  text-align: center;
+  line-height: 1.4;
+  min-width: 80px;
+  max-width: 150px;
+  flex-shrink: 0;
 }
 
 .empty-state {
