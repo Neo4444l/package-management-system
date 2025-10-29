@@ -133,7 +133,7 @@ database/多城市系统-完整配置.sql
 
 ### 5. 启动开发服务器
 ```bash
-npm run dev
+cd
 ```
 
 应用将在 `http://localhost:5173` 启动。
@@ -402,6 +402,67 @@ const translations = { zh, en, fr };
 - 查看网络连接状态
 
 详见：[紧急修复-清除卡住状态.md](./docs/紧急修复-清除卡住状态.md)
+
+### ❓ 数据丢失或看不到数据？
+
+如果发现数据时不时消失，请按以下步骤诊断：
+
+**可能原因：**
+1. ❌ RLS 权限问题 - 数据仍在，但无权查看
+2. ❌ 城市过滤问题 - 数据属于其他城市
+3. ❌ 误删除 - 管理员删除了库位或包裹
+4. ✅ Supabase **不会**自动删除数据
+
+**解决方案：**
+1. 运行诊断脚本：`database/数据丢失诊断.sql`
+2. 根据结果恢复数据：`database/恢复丢失的库位.sql`
+3. 启用删除审计日志（防止未来问题）
+4. 定期导出数据备份
+
+详见：[数据丢失问题-解决方案.md](./docs/数据丢失问题-解决方案.md)
+
+---
+
+## 🛡️ 数据安全与备份
+
+### 自动删除审计
+
+系统提供删除操作审计日志功能，记录所有删除操作：
+
+```sql
+-- 查看最近的删除记录
+SELECT 
+  user_email,
+  action,
+  details,
+  created_at
+FROM operation_logs
+WHERE action LIKE '%DELETE%'
+ORDER BY created_at DESC;
+```
+
+### 定期备份建议
+
+1. **Supabase Dashboard 导出**
+   - Table Editor → ... → Download as CSV
+   - 建议每周备份一次
+
+2. **前端导出功能**
+   - 中心退件管理 → 导出数据
+   - 自动生成 JSON 备份
+
+3. **SQL 备份脚本**
+   ```bash
+   # 导出所有数据
+   pg_dump -h your-db.supabase.co -U postgres -d postgres > backup.sql
+   ```
+
+### 防止误删除
+
+- ✅ 删除前二次确认
+- ✅ 仅 Super Admin 可删除用户
+- ✅ 仅 Admin+ 可删除包裹和库位
+- ✅ 删除库位会同时删除关联包裹（已提示）
 
 ---
 

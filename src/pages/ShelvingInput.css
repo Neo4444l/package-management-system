@@ -102,6 +102,7 @@
   font-size: 1.1rem;
   font-weight: 600;
   box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+  white-space: nowrap;
 }
 
 .package-form {

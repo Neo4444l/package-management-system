@@ -397,6 +397,14 @@
 .packages-table td {
   padding: 15px;
   border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+
+/* 状态和指令列的特殊样式 */
+.packages-table td:nth-child(4),
+.packages-table td:nth-child(5) {
+  white-space: nowrap;
+  min-width: 120px;
 }
 
 .packages-table tbody tr {
@@ -436,6 +444,7 @@
   border-radius: 12px;
   font-size: 0.85em;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .status-badge {
@@ -445,6 +454,9 @@
   color: white;
   font-size: 0.85rem;
   font-weight: 500;
+  white-space: nowrap;
+  text-align: center;
+  min-width: fit-content;
 }
 
 .instruction-badge {
@@ -454,6 +466,9 @@
   color: white;
   font-size: 0.85rem;
   font-weight: 500;
+  white-space: nowrap;
+  text-align: center;
+  min-width: fit-content;
 }
 
 .instruction-badge.empty {
