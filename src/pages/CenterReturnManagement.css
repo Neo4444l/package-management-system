@@ -392,6 +392,8 @@
   font-weight: 600;
   color: #333;
   border-bottom: 2px solid #e0e0e0;
+  font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .packages-table td {
@@ -426,24 +428,26 @@
   accent-color: #FF5722;
 }
 
-/* 统一所有文本列的样式 */
+/* 运单号列 - 加粗不换行 */
 .package-number {
   color: #666;
   font-size: 0.9rem;
+  font-weight: 600;
   white-space: nowrap;
 }
 
-/* 库位列样式 */
+/* 库位列 - 加粗不换行 */
 .packages-table td:nth-child(3) {
   color: #666;
   font-size: 0.9rem;
+  font-weight: 600;
   white-space: nowrap;
 }
 
+/* 时间列 - 允许换行 */
 .package-time {
   color: #666;
   font-size: 0.9rem;
-  white-space: nowrap;
 }
 
 .username-badge {
