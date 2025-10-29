@@ -349,13 +349,6 @@
   min-width: 0;
 }
 
-.location-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
 .location-code {
   font-size: 1.05rem;
   font-weight: 600;
@@ -400,6 +393,13 @@
   background: #ffe0e0;
   opacity: 1;
   transform: scale(1.1);
+}
+
+.location-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 768px) {

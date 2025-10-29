@@ -593,7 +593,7 @@ function LocationManagement() {
                     onChange={() => handleSelectLocation(location.id)}
                   />
                   <div className="location-info">
-                    <div className="location-header">
+                    <div className="location-card-header">
                       <div className="location-code">{location.code}</div>
                       <span className="package-count-badge">
                         {packageCounts[location.code] !== undefined ? packageCounts[location.code] : '...'} {t('shelving.packages')}
