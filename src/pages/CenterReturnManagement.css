@@ -426,22 +426,24 @@
   accent-color: #FF5722;
 }
 
+/* 统一所有文本列的样式 */
 .package-number {
-  font-weight: 600;
-  color: #333;
+  color: #666;
+  font-size: 0.9rem;
   white-space: nowrap;
 }
 
-/* 库位列样式（与运单号保持一致） */
+/* 库位列样式 */
 .packages-table td:nth-child(3) {
-  font-weight: 600;
-  color: #333;
+  color: #666;
+  font-size: 0.9rem;
   white-space: nowrap;
 }
 
 .package-time {
   color: #666;
   font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .username-badge {
