@@ -172,7 +172,10 @@ function ShelvingPage() {
           ) : (
             <>
               <div className="location-header-info">
-                <p>{t('shelving.totalLocations', { count: locations.length })}</p>
+                <div className="stat-item">
+                  <div className="stat-value">{locations.length}</div>
+                  <div className="stat-label">{t('shelving.selectLocation') || '可用库位'}</div>
+                </div>
               </div>
 
               <div className="location-grid">

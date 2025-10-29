@@ -158,18 +158,32 @@
 }
 
 .location-header-info {
-  text-align: center;
-  margin-bottom: 25px;
-  padding: 15px;
-  background: #f0f7ff;
-  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 30px;
+  padding: 25px;
+  background: white;
+  border-radius: 15px;
+  border: 2px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.location-header-info p {
-  margin: 0;
-  font-size: 1.1rem;
+.location-header-info .stat-item {
+  text-align: center;
+  color: #333;
+}
+
+.location-header-info .stat-value {
+  font-size: 2.5rem;
+  font-weight: 700;
   color: #667eea;
-  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.location-header-info .stat-label {
+  font-size: 0.95rem;
+  color: #666;
 }
 
 .location-grid {
