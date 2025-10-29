@@ -71,21 +71,19 @@
   position: absolute;
   top: 20px;
   left: 20px;
-  padding: 8px 16px;
-  background: white;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  color: #666;
+  background: #f5f5f5;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
   cursor: pointer;
+  font-size: 1rem;
   transition: all 0.3s ease;
-  font-weight: 500;
+  color: #666;
 }
 
 .back-button:hover {
-  background: #f5f5f5;
-  border-color: #ccc;
-  color: #333;
+  background: #e0e0e0;
+  transform: translateX(-5px);
 }
 
 .location-management-container {
@@ -93,7 +91,7 @@
   margin: 0 auto;
   background: white;
   border-radius: 20px;
-  padding: 30px 35px;
+  padding: 40px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   position: relative;
   min-height: 600px;
@@ -122,33 +120,32 @@
 }
 
 .location-form {
-  margin-bottom: 30px;
+  margin-bottom: 40px;
 }
 
 .form-group {
-  margin-bottom: 0;
+  margin-bottom: 20px;
 }
 
 .form-group label {
   display: block;
-  font-size: 0.95rem;
-  color: #666;
-  margin-bottom: 8px;
+  font-size: 1.1rem;
+  color: #333;
+  margin-bottom: 10px;
   font-weight: 500;
 }
 
 .input-with-button {
   display: flex;
-  gap: 12px;
-  align-items: stretch;
+  gap: 10px;
 }
 
 .location-input {
   flex: 1;
-  padding: 12px 16px;
-  font-size: 1rem;
+  padding: 15px 20px;
+  font-size: 1.2rem;
   border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  border-radius: 10px;
   transition: all 0.3s ease;
 }
 
@@ -159,11 +156,11 @@
 }
 
 .add-button {
-  padding: 12px 24px;
-  font-size: 1rem;
+  padding: 15px 30px;
+  font-size: 1.1rem;
   font-weight: 600;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
   color: white;
   cursor: pointer;
@@ -178,30 +175,28 @@
 }
 
 .locations-section {
-  margin-top: 30px;
+  margin-top: 40px;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
   padding-bottom: 15px;
   border-bottom: 2px solid #f0f0f0;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 15px;
 }
 
 .section-header h2 {
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   color: #333;
-  font-weight: 600;
 }
 
 .selected-count {
   color: #FF9800;
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 1.2rem;
 }
 
 .action-buttons {
@@ -210,13 +205,13 @@
 }
 
 .select-all-button {
-  padding: 8px 16px;
-  font-size: 0.9rem;
+  padding: 10px 20px;
+  font-size: 0.95rem;
   font-weight: 500;
   border: 2px solid #FF9800;
   background: white;
   color: #FF9800;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -226,13 +221,13 @@
 }
 
 .print-button {
-  padding: 8px 16px;
-  font-size: 0.9rem;
+  padding: 10px 20px;
+  font-size: 0.95rem;
   font-weight: 500;
   border: none;
   background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
   color: white;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 3px 10px rgba(76, 175, 80, 0.3);
@@ -251,22 +246,22 @@
 
 .empty-state {
   text-align: center;
-  padding: 50px 20px;
+  padding: 60px 20px;
   color: #999;
 }
 
 .empty-icon {
-  font-size: 3rem;
-  margin-bottom: 15px;
+  font-size: 4rem;
+  margin-bottom: 20px;
 }
 
 .empty-state p {
-  font-size: 1.1rem;
-  margin-bottom: 8px;
+  font-size: 1.2rem;
+  margin-bottom: 10px;
 }
 
 .empty-hint {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #bbb;
 }
 
