@@ -429,6 +429,14 @@
 .package-number {
   font-weight: 600;
   color: #333;
+  white-space: nowrap;
+}
+
+/* 库位列样式（与运单号保持一致） */
+.packages-table td:nth-child(3) {
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
 }
 
 .package-time {
