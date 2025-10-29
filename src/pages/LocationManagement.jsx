@@ -16,6 +16,7 @@ function LocationManagement() {
   const [notification, setNotification] = useState(null)
   const [selectedLocations, setSelectedLocations] = useState([])
   const [isOnline, setIsOnline] = useState(true)
+  const [packageCounts, setPackageCounts] = useState({}) // 存储每个库位的包裹数量
   const canvasRef = useRef(null)
 
   // 从 Supabase 加载库位数据（城市过滤）
@@ -65,12 +66,44 @@ function LocationManagement() {
               }
               return [...prev, newLocation]
             })
+            // 初始化新库位的包裹数量
+            setPackageCounts(prev => ({ ...prev, [payload.new.code]: 0 }))
             showNotification(`📍 ${t('locationManagement.newLocationAdded')}: ${payload.new.code}`, 'info')
           } else if (payload.eventType === 'DELETE') {
             // 其他用户删除了库位
             setLocations(prev => prev.filter(l => l.id !== payload.old.id))
             setSelectedLocations(prev => prev.filter(id => id !== payload.old.id))
+            setPackageCounts(prev => {
+              const newCounts = { ...prev }
+              delete newCounts[payload.old.code]
+              return newCounts
+            })
             showNotification(`🗑️ ${t('locationManagement.locationDeleted')}: ${payload.old.code}`, 'info')
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'packages',
+          filter: `city=eq.${currentCity}` // 监听包裹变化
+        },
+        async (payload) => {
+          console.log('📦 包裹数据变化，更新库位数量：', payload.eventType)
+          // 更新特定库位的包裹数量
+          const locationCode = payload.new?.location || payload.old?.location
+          if (locationCode) {
+            const { count, error } = await supabase
+              .from('packages')
+              .select('*', { count: 'exact', head: true })
+              .eq('location', locationCode)
+              .eq('city', currentCity)
+            
+            if (!error) {
+              setPackageCounts(prev => ({ ...prev, [locationCode]: count || 0 }))
+            }
           }
         }
       )
@@ -100,9 +133,40 @@ function LocationManagement() {
           : '-'
       }))
       setLocations(locationsWithFormattedDate)
+      
+      // 加载每个库位的包裹数量
+      await loadPackageCounts(locationsWithFormattedDate)
     } catch (error) {
       console.error('Error loading locations:', error)
       showNotification(t('messages.loadingFailed'), 'error')
+    }
+  }
+
+  // 加载每个库位的包裹数量
+  const loadPackageCounts = async (locationsList) => {
+    try {
+      const counts = {}
+      
+      // 并行获取所有库位的包裹数量
+      await Promise.all(
+        locationsList.map(async (location) => {
+          const { count, error } = await supabase
+            .from('packages')
+            .select('*', { count: 'exact', head: true })
+            .eq('location', location.code)
+            .eq('city', currentCity)
+          
+          if (!error) {
+            counts[location.code] = count || 0
+          } else {
+            counts[location.code] = 0
+          }
+        })
+      )
+      
+      setPackageCounts(counts)
+    } catch (error) {
+      console.error('Error loading package counts:', error)
     }
   }
 
@@ -146,6 +210,9 @@ function LocationManagement() {
 
       const updatedLocations = [...locations, formattedLocation]
       setLocations(updatedLocations)
+      
+      // 初始化新库位的包裹数量为0
+      setPackageCounts(prev => ({ ...prev, [newLocation.code]: 0 }))
       
       setLocationInput('')
       showNotification(`${t('locationManagement.location')} ${newLocation.code} ${t('locationManagement.addedToCloud')}`, 'success')
@@ -519,7 +586,12 @@ function LocationManagement() {
                     onChange={() => handleSelectLocation(location.id)}
                   />
                   <div className="location-info">
-                    <div className="location-code">{location.code}</div>
+                    <div className="location-header">
+                      <div className="location-code">{location.code}</div>
+                      <span className="package-count-badge">
+                        {packageCounts[location.code] !== undefined ? packageCounts[location.code] : '...'} {t('shelving.packages')}
+                      </span>
+                    </div>
                     <div className="location-date">{location.created_at_display || location.createdAtDisplay}</div>
                   </div>
                   <button

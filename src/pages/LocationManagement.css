@@ -284,16 +284,36 @@
 
 .location-info {
   flex: 1;
+  min-width: 0;
+}
+
+.location-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
 }
 
 .location-code {
   font-size: 1.05rem;
   font-weight: 600;
   color: #333;
-  margin-bottom: 5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex-shrink: 1;
+}
+
+.package-count-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+  color: white;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .location-date {
