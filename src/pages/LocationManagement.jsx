@@ -522,6 +522,13 @@ function LocationManagement() {
           <p>{t('locationManagement.subtitle')}</p>
         </div>
 
+        <div className="stats-bar">
+          <div className="stat-item">
+            <div className="stat-value">{locations.length}</div>
+            <div className="stat-label">{t('shelving.locations') || '库位总数'}</div>
+          </div>
+        </div>
+
         <form className="location-form" onSubmit={handleAddLocation}>
           <div className="form-group">
             <label htmlFor="location-input">{t('locationManagement.addNewLocation')}:</label>
