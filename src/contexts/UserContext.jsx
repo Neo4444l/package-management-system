@@ -58,13 +58,38 @@ export const UserProvider = ({ children }) => {
         .eq('id', userId)
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('❌ 获取用户资料失败:', error)
+        // 如果找不到用户资料（可能已被删除），强制登出
+        await supabase.auth.signOut()
+        setSession(null)
+        setUserRole(null)
+        setUsername('')
+        setLoading(false)
+        return
+      }
+
+      // 检查用户是否被停用
+      if (!data.is_active) {
+        console.warn('⚠️ 用户账号已被停用')
+        alert('您的账号已被停用，请联系管理员。')
+        await supabase.auth.signOut()
+        setSession(null)
+        setUserRole(null)
+        setUsername('')
+        setLoading(false)
+        return
+      }
+
       setUserRole(data?.role || 'user')
       setUsername(data?.username || session?.user?.email?.split('@')[0] || 'User')
     } catch (error) {
       console.error('获取用户角色失败:', error)
-      setUserRole('user')
-      setUsername(session?.user?.email?.split('@')[0] || 'User')
+      // 出现任何错误都强制登出，防止未授权访问
+      await supabase.auth.signOut()
+      setSession(null)
+      setUserRole(null)
+      setUsername('')
     } finally {
       setLoading(false)
     }
