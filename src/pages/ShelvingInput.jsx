@@ -116,9 +116,9 @@ function ShelvingInput() {
       return
     }
 
-    // 验证包裹号格式：SWX开头 + 18位数字（共21位）
+    // 验证包裹号格式：SWX开头 + 18位数字（共21位）或 CK开头 + 15位数字（共17位）
     const trimmedPackageNumber = packageNumber.trim()
-    const packageRegex = /^SWX\d{18}$/
+    const packageRegex = /^(SWX\d{18}|CK\d{15})$/
     
     if (!packageRegex.test(trimmedPackageNumber)) {
       showNotification(t('shelving.invalidPackageNumber'), 'error')
