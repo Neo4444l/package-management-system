@@ -63,6 +63,8 @@ export default function UserManagement() {
   const fetchUsers = async () => {
     try {
       setLoading(true)
+      setError('') // 清除之前的错误消息
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -70,11 +72,21 @@ export default function UserManagement() {
 
       if (error) throw error
       
-      // 过滤掉可能的空记录或已删除的用户
-      const validUsers = (data || []).filter(user => user.email && user.id)
+      // 过滤掉可能的空记录或无效用户，确保只显示有效数据
+      const validUsers = (data || []).filter(user => {
+        // 必须有 email 和 id
+        if (!user.email || !user.id) return false
+        
+        // 检查是否有对应的 auth.users 记录（通过 id 引用）
+        // 注意：profiles.id 引用 auth.users.id，所以如果能查到就说明 auth 记录存在
+        return true
+      })
+      
       setUsers(validUsers)
     } catch (error) {
+      console.error('获取用户列表失败:', error)
       setError(t('messages.loadingFailed') + ': ' + error.message)
+      setUsers([]) // 出错时清空列表
     } finally {
       setLoading(false)
     }
@@ -235,16 +247,19 @@ export default function UserManagement() {
 
       if (!confirmed) return
 
-      // 从profiles表删除用户
-      const { error, count } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId)
-        .select()
+      // 使用安全删除函数（同时删除 auth.users 和 profiles）
+      const { data, error } = await supabase.rpc('delete_user_completely', {
+        target_user_id: userId
+      })
 
       if (error) {
         console.error('删除错误详情:', error)
         throw error
+      }
+
+      // 检查函数返回结果
+      if (data && !data.success) {
+        throw new Error(data.message || '删除失败')
       }
 
       // 验证删除是否成功 - 立即从state中移除该用户
@@ -252,9 +267,10 @@ export default function UserManagement() {
       
       setSuccess(`${t('userManagement.userDeleted')}: "${user?.username || userEmail}"!`)
       
-      // 3秒后清除成功消息
+      // 3秒后清除成功消息并刷新列表
       setTimeout(() => {
         setSuccess('')
+        fetchUsers() // 刷新列表以确保同步
       }, 3000)
     } catch (error) {
       console.error('删除用户失败:', error)
@@ -376,12 +392,15 @@ export default function UserManagement() {
       setNewUserUsername('')
       setNewUserPassword('')
       setNewUserRole('user')
+      setNewUserCities(['MIA'])
       
-      // 刷新用户列表
+      // 立即刷新用户列表，并在延迟后再次刷新以确保数据同步
+      await fetchUsers()
       setTimeout(() => {
         fetchUsers()
-      }, 1000)
+      }, 1500)
     } catch (error) {
+      console.error('创建用户失败:', error)
       setError(t('messages.createFailed') + ': ' + error.message)
     }
   }
